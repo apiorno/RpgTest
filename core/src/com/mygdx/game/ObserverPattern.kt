@@ -20,4 +20,4 @@ interface IObservable{
  enum class EventType {
     INPUT_PRESSED, INPUT_RELEASED
 }
-class Event (val eventType: EventType,val value: String)
+class Event (val eventType: EventType,val value: PlayerInputProcessor.Key)

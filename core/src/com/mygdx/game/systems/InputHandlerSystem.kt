@@ -9,38 +9,39 @@ import com.mygdx.game.*
 
 
 class InputHandlerSystem @Inject constructor() : IteratingSystem(Family.all(InputComponent::class.java).get()), IObserver {
-     var lastEvent  : Event? = null
+     var presedKeys  = HashMap<PlayerInputProcessor.Key,Boolean>()
 
     override fun receiveNotification(event: Event) {
-        lastEvent = event
+        presedKeys[event.value] = event.eventType == EventType.INPUT_PRESSED
     }
 
     override fun processEntity(entity: Entity, deltaTime: Float) {
-        if (lastEvent != null) {
 
-            when (lastEvent!!.value) {
-                "QUIT" -> {
-                    lastEvent = null
-                    Gdx.app.exit()
-                }
-                "PAUSE" -> {
-                    //Pause game
-
-                }
-                else -> {
-                    val stateComponent = entity.state
-                    stateComponent.direction = lastEvent!!.value
-                    if(lastEvent!!.eventType == EventType.INPUT_PRESSED){
-                        stateComponent.state = "WALKING"
-                    }
-                    if(lastEvent!!.eventType == EventType.INPUT_RELEASED) {
-                        stateComponent.state = "IDLE"
-                    }
-                    lastEvent = null
-                }
-            }
+        if(presedKeys[PlayerInputProcessor.Key.QUIT]!!){
+            Gdx.app.exit()
         }
+        if(presedKeys[PlayerInputProcessor.Key.PAUSE]!!){
+            //Pause game
+        }
+        val stateComponent = entity.state
+        stateComponent.state = "IDLE"
 
+        if(presedKeys[PlayerInputProcessor.Key.RIGHT]!!){
+            stateComponent.state = "WALKING"
+            stateComponent.direction = "RIGHT"
+        }
+        if(presedKeys[PlayerInputProcessor.Key.LEFT]!!){
+            stateComponent.state = "WALKING"
+            stateComponent.direction = "LEFT"
+        }
+        if(presedKeys[PlayerInputProcessor.Key.DOWN]!!){
+            stateComponent.state = "WALKING"
+            stateComponent.direction = "DOWN"
+        }
+        if(presedKeys[PlayerInputProcessor.Key.UP]!!){
+            stateComponent.state = "WALKING"
+            stateComponent.direction = "UP"
+        }
     }
 
 

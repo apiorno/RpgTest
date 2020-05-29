@@ -3,6 +3,7 @@ package com.mygdx.game
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.ApplicationAdapter
+import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
@@ -19,9 +20,10 @@ import com.mygdx.game.systems.InputHandlerSystem
 import com.mygdx.game.systems.TransformSystem
 import java.util.*
 
-class MyGdxGame : ApplicationAdapter() {
+class MyGdxGame : Game() {
     lateinit var batch: SpriteBatch
     lateinit var engine : Engine
+    private val screnManager = ScreenManager(this)
     lateinit var inputProcessor: PlayerInputProcessor
     private lateinit var injector : Injector
     companion object{
@@ -30,6 +32,7 @@ class MyGdxGame : ApplicationAdapter() {
     @Override
     override fun create() {
         batch = SpriteBatch()
+        setScreen(screnManager.getScreenType(ScreenManager.ScreenType.MainMenu))
         injector = Guice.createInjector(GameModule(this))
         inputProcessor = injector.getInstance(PlayerInputProcessor::class.java)
         engine = injector.getInstance(Engine::class.java)
@@ -38,6 +41,9 @@ class MyGdxGame : ApplicationAdapter() {
         inputProcessor.add(engine.getSystem(TransformSystem::class.java))
         Gdx.input.inputProcessor = inputProcessor
         createEntities()
+    }
+    fun setScreenOfType(screenType : ScreenManager.ScreenType){
+        setScreen(screnManager.getScreenType(screenType))
     }
 
     private fun createEntities() {
@@ -85,6 +91,8 @@ class MyGdxGame : ApplicationAdapter() {
     @Override
     override fun dispose() {
         batch.dispose()
+        screen.dispose()
+
     }
 
     protected fun loadAnimation(textureName: String, points: Array<GridPoint2>, frameDuration: Float): Animation<TextureRegion?> {

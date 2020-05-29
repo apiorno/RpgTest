@@ -5,7 +5,7 @@ import com.badlogic.gdx.InputProcessor
 
 class PlayerInputProcessor() : InputProcessor, IObservable{
 
-    protected enum class Key {
+     enum class Key {
         LEFT, RIGHT, UP, DOWN, QUIT, PAUSE
     }
     override val observers: ArrayList<IObserver> = ArrayList()
@@ -54,10 +54,10 @@ class PlayerInputProcessor() : InputProcessor, IObservable{
         return true
     }
     private fun pressed(key: Key){
-        notifyObservers(Event(EventType.INPUT_PRESSED,key.toString()))
+        notifyObservers(Event(EventType.INPUT_PRESSED,key))
     }
     private fun released(key: Key){
-        notifyObservers(Event(EventType.INPUT_RELEASED,key.toString()))
+        notifyObservers(Event(EventType.INPUT_RELEASED,key))
     }
 
     override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
