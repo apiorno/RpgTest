@@ -1,7 +1,6 @@
 package com.mygdx.game.windows
 
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -12,15 +11,15 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.MyGdxGame
 import com.mygdx.game.ScreenManager
 import com.mygdx.game.Utility
+import com.mygdx.game.audio.AudioObserver.*
 
-class MainMenuScreen(private val game: MyGdxGame): Screen {
+class MainMenuScreen(private val game: MyGdxGame): GameScreen() {
 
-    private val stage: Stage
+    private val stage: Stage = Stage()
 
     init {
 
         //creation
-        stage = Stage()
         val table = Table()
         table.setFillParent(true)
         val title = Image(Utility.STATUSUI_TEXTUREATLAS.findRegion("bludbourne_title"))
@@ -77,7 +76,7 @@ class MainMenuScreen(private val game: MyGdxGame): Screen {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                //notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TITLE)
+                notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TITLE)
                 game.setScreenOfType(ScreenManager.ScreenType.WatchIntro)
             }
         }
@@ -92,7 +91,7 @@ class MainMenuScreen(private val game: MyGdxGame): Screen {
             }
         }
         )
-        //notify(AudioCommand.MUSIC_LOAD, AudioTypeEvent.MUSIC_TITLE)
+        notify(AudioCommand.MUSIC_LOAD, AudioTypeEvent.MUSIC_TITLE)
     }
 
     override fun render(delta: Float) {
@@ -106,7 +105,7 @@ class MainMenuScreen(private val game: MyGdxGame): Screen {
     }
 
     override fun show() {
-        //notify(AudioCommand.MUSIC_PLAY_LOOP, AudioTypeEvent.MUSIC_TITLE)
+        notify(AudioCommand.MUSIC_PLAY_LOOP, AudioTypeEvent.MUSIC_TITLE)
         Gdx.input.inputProcessor = stage
     }
 

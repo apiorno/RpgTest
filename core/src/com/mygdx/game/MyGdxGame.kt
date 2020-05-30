@@ -23,7 +23,7 @@ import java.util.*
 class MyGdxGame : Game() {
     lateinit var batch: SpriteBatch
     lateinit var engine : Engine
-    private val screnManager = ScreenManager(this)
+    private lateinit var screnManager : ScreenManager
     lateinit var inputProcessor: PlayerInputProcessor
     private lateinit var injector : Injector
     companion object{
@@ -32,22 +32,22 @@ class MyGdxGame : Game() {
     @Override
     override fun create() {
         batch = SpriteBatch()
-        setScreen(screnManager.getScreenType(ScreenManager.ScreenType.MainMenu))
-        injector = Guice.createInjector(GameModule(this))
+        screnManager = ScreenManager(this)
+        setScreenOfType(ScreenManager.ScreenType.MainMenu)
+        /*injector = Guice.createInjector(GameModule(this))
         inputProcessor = injector.getInstance(PlayerInputProcessor::class.java)
         engine = injector.getInstance(Engine::class.java)
         injector.getInstance(Systems::class.java).list.map { injector.getInstance(it) }.forEach{system -> engine.addSystem(system)}
         inputProcessor.add(engine.getSystem(InputHandlerSystem::class.java))
-        inputProcessor.add(engine.getSystem(TransformSystem::class.java))
         Gdx.input.inputProcessor = inputProcessor
-        createEntities()
+        createEntities()*/
     }
     fun setScreenOfType(screenType : ScreenManager.ScreenType){
         setScreen(screnManager.getScreenType(screenType))
     }
 
     private fun createEntities() {
-        val world = injector.getInstance(World::class.java)
+       // val world = injector.getInstance(World::class.java)
         var animations: Hashtable<String, Animation<TextureRegion?>> = Hashtable()
         loadAnimationsFromConfig("scripts/player.json",animations)
         val idle =animations.get("IDLE")?.getKeyFrame(0F)
@@ -81,12 +81,13 @@ class MyGdxGame : Game() {
     }
 
 
-    @Override
+    /*@Override
     override fun render() {
         Gdx.gl.glClearColor(1f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+        super.render()
         engine.update(Gdx.graphics.deltaTime)
-    }
+    }*/
 
     @Override
     override fun dispose() {
