@@ -15,40 +15,42 @@ import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioObserver
 import com.mygdx.game.profile.ProfileManager
+import ktx.collections.GdxArray
+import ktx.scene2d.*
 
 class LoadGameScreen (private val game: MyGdxGame) : GameScreen() {
     private val stage: Stage = Stage()
-    private val listItems: List<*>
+    lateinit var listItems: List<*>
 
     init {
+        addActorsToStage()
+    }
+    private fun addActorsToStage(){
 
-        //create
         val loadButton = TextButton("Load", Utility.STATUSUI_SKIN)
         val backButton = TextButton("Back", Utility.STATUSUI_SKIN)
         ProfileManager.instance?.storeAllProfiles()
-        listItems = List<Any?>(Utility.STATUSUI_SKIN, "inventory")
-        var list : Array<String>  = ProfileManager.instance.profileList
-        listItems.setItems(list)
-        val scrollPane = ScrollPane(listItems)
-        scrollPane.setOverscroll(false, false)
-        scrollPane.setFadeScrollBars(false)
-        scrollPane.setScrollingDisabled(true, false)
-        scrollPane.setScrollbarsOnTop(true)
-        val table = Table()
-        val bottomTable = Table()
+        val list = ProfileManager.instance.profileList
+        listItems = scene2d.listWidgetOf(list,"inventory",Utility.STATUSUI_SKIN)
 
-        //Layout
-        table.center()
-        table.setFillParent(true)
-        table.padBottom(loadButton.height)
-        table.add(scrollPane).center()
-        bottomTable.height = loadButton.height
-        bottomTable.width = Gdx.graphics.width.toFloat()
-        bottomTable.center()
-        bottomTable.add(loadButton).padRight(50f)
-        bottomTable.add(backButton)
-        stage.addActor(table)
-        stage.addActor(bottomTable)
+        stage.actors {
+            //Layout
+            table { center()
+            setFillParent(true)
+            padBottom(loadButton.height)
+            add(scrollPane {
+                actor(listItems)
+                setOverscroll(false,false)
+                fadeScrollBars = false
+                setScrollingDisabled(true,false)
+                setScrollbarsOnTop(true)
+            }).center()}
+            table { height=loadButton.height
+            width = Gdx.graphics.width.toFloat()
+            center()
+            add(loadButton).padRight(50f)
+            add(backButton)}
+        }
 
         //Listeners
         backButton.addListener(object : ClickListener() {
@@ -80,8 +82,8 @@ class LoadGameScreen (private val game: MyGdxGame) : GameScreen() {
             }
         }
         )
-    }
 
+    }
     override fun render(delta: Float) {
         if (delta == 0f) {
             return

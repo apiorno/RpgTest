@@ -65,9 +65,11 @@ project(":core") {
         api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
         api "com.badlogicgames.ashley:ashley:$ashleyVersion"
         api "com.google.inject:guice:$guiceVersion"
+        api "io.github.libktx:ktx-actors:$ktxVersion"
         api "io.github.libktx:ktx-app:$ktxVersion"
         api "io.github.libktx:ktx-ashley:$ktxVersion"
         api "io.github.libktx:ktx-collections:$ktxVersion"
+        api "io.github.libktx:ktx-scene2d:$ktxVersion"
     }
 }
 repositories {
