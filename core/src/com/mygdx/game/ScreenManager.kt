@@ -3,7 +3,7 @@ package com.mygdx.game
 import com.badlogic.gdx.Screen
 import com.mygdx.game.windows.*
 
-class ScreenManager(private val game: MyGdxGame) {
+class ScreenManager(game: MyGdxGame) {
     enum class ScreenType {
         MainMenu, MainGame, LoadGame, NewGame, GameOver, WatchIntro, Credits
     }

@@ -1,5 +1,6 @@
 package com.mygdx.game
 
+import AnimationType
 import com.badlogic.ashley.core.Component
 import com.badlogic.ashley.core.ComponentMapper
 import com.badlogic.ashley.core.Entity
@@ -41,7 +42,7 @@ class PhysicsComponent(val body: Body) : Component {
 val Entity.physics : PhysicsComponent
     get() = PhysicsComponent[this]
 
-class AnimationComponent(var animations: Hashtable<String, Animation<TextureRegion?>>) : Component {
+class AnimationComponent(var animations: Hashtable<AnimationType, Animation<TextureRegion?>>) : Component {
     companion object : ComponentResolver<AnimationComponent>(AnimationComponent::class.java)
 }
 

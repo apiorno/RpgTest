@@ -1,5 +1,6 @@
 package com.mygdx.game
 
+import AnimationType
 import com.badlogic.ashley.core.Engine
 import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.ApplicationAdapter
@@ -24,23 +25,21 @@ class MyGdxGame : Game() {
     lateinit var batch: SpriteBatch
     lateinit var engine : Engine
     private lateinit var screnManager : ScreenManager
+    lateinit var injector : Injector
     lateinit var inputProcessor: PlayerInputProcessor
-    private lateinit var injector : Injector
-    companion object{
-        lateinit var img: Texture
-    }
+
     @Override
     override fun create() {
         batch = SpriteBatch()
         screnManager = ScreenManager(this)
         setScreenOfType(ScreenManager.ScreenType.MainMenu)
-        /*injector = Guice.createInjector(GameModule(this))
-        inputProcessor = injector.getInstance(PlayerInputProcessor::class.java)
+        injector = Guice.createInjector(GameModule(this))
         engine = injector.getInstance(Engine::class.java)
+        inputProcessor = injector.getInstance(PlayerInputProcessor::class.java)
         injector.getInstance(Systems::class.java).list.map { injector.getInstance(it) }.forEach{system -> engine.addSystem(system)}
         inputProcessor.add(engine.getSystem(InputHandlerSystem::class.java))
         Gdx.input.inputProcessor = inputProcessor
-        createEntities()*/
+        createEntities()
     }
     fun setScreenOfType(screenType : ScreenManager.ScreenType){
         setScreen(screnManager.getScreenType(screenType))
@@ -48,7 +47,7 @@ class MyGdxGame : Game() {
 
     private fun createEntities() {
        // val world = injector.getInstance(World::class.java)
-        var animations: Hashtable<String, Animation<TextureRegion?>> = Hashtable()
+        var animations: Hashtable<AnimationType, Animation<TextureRegion?>> = Hashtable()
         loadAnimationsFromConfig("scripts/player.json",animations)
         val idle =animations.get("IDLE")?.getKeyFrame(0F)
         engine.addEntity(Entity().apply {
@@ -107,7 +106,7 @@ class MyGdxGame : Game() {
         animation.playMode = Animation.PlayMode.LOOP
         return animation
     }
-    protected  fun loadAnimationsFromConfig (configFilePath:String, animations : Hashtable<String, Animation<TextureRegion?>>){
+    protected  fun loadAnimationsFromConfig (configFilePath:String, animations : Hashtable<AnimationType, Animation<TextureRegion?>>){
         val entityConfig = Json().fromJson(EntityConfig::class.java, Gdx.files.internal(configFilePath))
         val animationConfigs = entityConfig.animationConfig
         for (animationConfig in animationConfigs) {

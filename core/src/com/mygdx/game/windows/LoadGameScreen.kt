@@ -32,19 +32,18 @@ class LoadGameScreen (private val game: MyGdxGame) : GameScreen() {
         ProfileManager.instance?.storeAllProfiles()
         val list = ProfileManager.instance.profileList
         listItems = scene2d.listWidgetOf(list,"inventory",Utility.STATUSUI_SKIN)
+        val scrollPane = ScrollPane (listItems)
+        scrollPane.setOverscroll(false,false)
+        scrollPane.fadeScrollBars = false
+        scrollPane.setScrollingDisabled(true,false)
+        scrollPane.setScrollbarsOnTop(true)
 
         stage.actors {
             //Layout
             table { center()
             setFillParent(true)
             padBottom(loadButton.height)
-            add(scrollPane {
-                actor(listItems)
-                setOverscroll(false,false)
-                fadeScrollBars = false
-                setScrollingDisabled(true,false)
-                setScrollbarsOnTop(true)
-            }).center()}
+            add(scrollPane).center()}
             table { height=loadButton.height
             width = Gdx.graphics.width.toFloat()
             center()

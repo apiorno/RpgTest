@@ -1,5 +1,6 @@
 package com.mygdx.game
 
+import AnimationType
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.ObjectMap
@@ -8,8 +9,8 @@ class EntityConfig {
     var animationConfig: Array<AnimationConfig>
         private set
     //var inventory: Array<ItemTypeID>
-    var state = "IDLE"
-    var direction = "DOWN"
+    var state = State.IDLE
+    var direction = Direction.DOWN
     var entityID: String? = null
     var conversationConfigPath: String? = null
     var questConfigPath: String? = null
@@ -57,14 +58,9 @@ class EntityConfig {
 
     class AnimationConfig {
         var frameDuration = 1.0f
-        var animationType: String
-        var texturePaths: Array<String>
-        var gridPoints: Array<GridPoint2>
+        var animationType: AnimationType = AnimationType.IDLE
+        var texturePaths: Array<String> = Array()
+        var gridPoints: Array<GridPoint2> = Array()
 
-        init {
-            animationType = "IDLE"
-            texturePaths = Array()
-            gridPoints = Array()
-        }
     }
 }
