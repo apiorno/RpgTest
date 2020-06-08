@@ -1,5 +1,6 @@
 package com.mygdx.game.windows
 
+import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.Screen
@@ -7,14 +8,11 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.maps.tiled.TiledMapImageLayer
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.utils.Json
 import com.mygdx.game.MyGdxGame
-import com.mygdx.game.PlayerInputProcessor
-import com.mygdx.game.ScreenManager
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.temporal.EntityFactory
-import com.mygdx.game.temporal.EntityFactory.Companion.getEntity
 
 open class MainGameScreen  (private val game: MyGdxGame) :Screen {
     object VIEWPORT {
@@ -36,6 +34,8 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
     private val json: Json
     private val multiplexer: InputMultiplexer
     private val playerHUD: PlayerHUD
+    private val camera : OrthographicCamera
+    private val player: Entity
 
     companion object {
         private val TAG = MainGameScreen::class.java.simpleName
@@ -73,8 +73,8 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
 
         //get the current size
         camera = game.injector.getInstance(OrthographicCamera::class.java)
-        camera!!.setToOrtho(false, VIEWPORT.viewportWidth, VIEWPORT.viewportHeight)
-        player = getEntity(EntityType.PLAYER)
+        camera.setToOrtho(false, VIEWPORT.viewportWidth, VIEWPORT.viewportHeight)
+        player = EntityFactory.instance!!.getPlayer()!!
         mapMgr.player = player
         mapMgr.camera = camera
         hudCamera = OrthographicCamera()
@@ -110,9 +110,9 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
         mapRenderer!!.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         if (mapMgr.hasMapChanged()) {
             mapRenderer!!.map = mapMgr.currentTiledMap
-            player!!.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(mapMgr.playerStartUnitScaled))
-            camera!!.position[mapMgr.playerStartUnitScaled!!.x, mapMgr.playerStartUnitScaled!!.y] = 0f
-            camera!!.update()
+            player.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(mapMgr.playerStartUnitScaled))
+            camera.position[mapMgr.playerStartUnitScaled!!.x, mapMgr.playerStartUnitScaled!!.y] = 0f
+            camera.update()
             playerHUD.updateEntityObservers()
             mapMgr.setMapChanged(false)
             playerHUD.addTransitionToScreen()

@@ -124,13 +124,13 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
         }
 
     private fun getAnimatedImage(entityName: EntityName): AnimatedImage {
-        val entity = EntityFactory.instance!!.getEntityByName(entityName)!!
-        return setEntityAnimation(entity.entityConfig!!)
+        val entityConfig = EntityFactory.instance!!.getEntityConfigByName(entityName)
+        return setEntityAnimation(entityConfig)
     }
 
     private fun getAnimatedImage(entityName: MonsterEntityType): AnimatedImage {
-        val entity = MonsterFactory.instance!!.getMonster(entityName)
-        return setEntityAnimation(entity.entityConfig!!)
+        val entityConfig = MonsterFactory.instance!!.getMonsterConfigByType(entityName)
+        return setEntityAnimation(entityConfig!!)
     }
 
     private fun setEntityAnimation(entityConfig: EntityConfig): AnimatedImage {

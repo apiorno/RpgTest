@@ -3,6 +3,7 @@ package com.mygdx.game.temporal
 import AnimationType
 import FRAME_HEIGHT
 import FRAME_WIDTH
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.GridPoint2
@@ -11,9 +12,9 @@ import com.mygdx.game.EntityConfig
 import com.mygdx.game.Utility
 import java.util.*
 
-class AnimationManager (private val entityConfig: EntityConfig){
+class AnimationManager (private val entityConfig : EntityConfig){
     protected var json = Json()
-    protected  var animations: Hashtable<AnimationType, Animation<TextureRegion>> = Hashtable()
+    var animations: Hashtable<AnimationType, Animation<TextureRegion>> = Hashtable()
 
     init {
         loadAnimations()

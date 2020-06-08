@@ -1,13 +1,10 @@
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.MathUtils
-import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonValue
 import com.mygdx.game.EntityConfig
 import com.mygdx.game.profile.ProfileManager
-import com.mygdx.game.temporal.Entity
-import com.mygdx.game.temporal.EntityFactory
 import java.util.*
 
 enum class Direction {
@@ -78,45 +75,6 @@ const val UNIT_SCALE = 1 / 16f
         return serializedConfig ?: entityConfig
     }
 
-    fun loadEntityConfig(entityConfig: EntityConfig): EntityConfig {
-        val serializedConfig = ProfileManager.instance.getProperty(entityConfig.entityID!!, EntityConfig::class.java)
-        return serializedConfig ?: entityConfig
-    }
-
-    fun initEntity(entityConfig: EntityConfig?, position: Vector2?): Entity? {
-        val json = Json()
-        val entity: Entity = EntityFactory.Companion.getEntity(EntityFactory.EntityType.NPC)!!
-        entity.entityConfig = entityConfig
-        entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
-        entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(position))
-        entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig!!.state))
-        entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig!!.direction))
-        return entity
-    }
 
 
-    fun initEntities(configs: Array<EntityConfig>): Hashtable<String?, Entity?> {
-        val json = Json()
-        val entities = Hashtable<String?, Entity?>()
-        for (config in configs) {
-            val entity: Entity = EntityFactory.Companion.getEntity(EntityFactory.EntityType.NPC)!!
-            entity.entityConfig = config
-            entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
-            entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(Vector2(0f, 0f)))
-            entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig!!.state))
-            entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig!!.direction))
-            entities[entity.entityConfig!!.entityID] = entity
-        }
-        return entities
-    }
 
-    fun initEntity(entityConfig: EntityConfig?): Entity? {
-        val json = Json()
-        val entity: Entity = EntityFactory.Companion.getEntity(EntityFactory.EntityType.NPC)!!
-        entity.entityConfig = entityConfig
-        entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
-        entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(Vector2(0f, 0f)))
-        entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig!!.state))
-        entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig!!.direction))
-        return entity
-    }

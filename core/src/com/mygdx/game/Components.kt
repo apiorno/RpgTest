@@ -42,7 +42,7 @@ class PhysicsComponent(val body: Body) : Component {
 val Entity.physics : PhysicsComponent
     get() = PhysicsComponent[this]
 
-class AnimationComponent(var animations: Hashtable<AnimationType, Animation<TextureRegion?>>) : Component {
+class AnimationComponent(var animations: Hashtable<AnimationType, Animation<TextureRegion>>) : Component {
     companion object : ComponentResolver<AnimationComponent>(AnimationComponent::class.java)
 }
 

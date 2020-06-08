@@ -1,10 +1,12 @@
 package com.mygdx.game.temporal
 
+import com.badlogic.ashley.core.Entity
+import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
-import com.mygdx.game.EntityConfig
+import com.mygdx.game.*
 import getEntityConfigs
-import initEntity
 import loadEntityConfigByPath
 import java.util.*
 
@@ -18,12 +20,51 @@ class EntityFactory private constructor() {
     enum class EntityName {
         PLAYER_PUPPET, TOWN_GUARD_WALKING, TOWN_BLACKSMITH, TOWN_MAGE, TOWN_INNKEEPER, TOWN_FOLK1, TOWN_FOLK2, TOWN_FOLK3, TOWN_FOLK4, TOWN_FOLK5, TOWN_FOLK6, TOWN_FOLK7, TOWN_FOLK8, TOWN_FOLK9, TOWN_FOLK10, TOWN_FOLK11, TOWN_FOLK12, TOWN_FOLK13, TOWN_FOLK14, TOWN_FOLK15, FIRE
     }
-
+    fun getPlayer () : Entity?{
+        return getEntity(EntityType.PLAYER,getEntityConfigByName(EntityName.PLAYER_PUPPET))
+    }
     fun getEntityByName(entityName: EntityName): Entity? {
-        val config = EntityConfig(entities[entityName.toString()])
-        return initEntity(config)
+        val config = getEntityConfigByName(entityName)
+        return getEntity(EntityType.NPC,config)
     }
 
+     fun getEntityConfigByName(entityName: EntityName): EntityConfig {
+        return EntityConfig(entities[entityName.toString()])
+    }
+
+    fun getEntity(entityType: EntityType?, entityConfig: EntityConfig): Entity? {
+        var entity: Entity? = null
+        return when (entityType) {
+            EntityType.PLAYER -> {
+                val animationManager = AnimationManager(entityConfig)
+
+                val idle = animationManager.getAnimation(AnimationType.IDLE).getKeyFrame(0F)
+                entity =Entity().apply {
+                    add(InputComponent())
+                    add(StateComponent())
+                    add(AnimationComponent(animationManager.animations))
+                    add(TextureRegionComponent(TextureRegion(idle)))
+                    add(TransformComponent(Vector2(28F, 5F), 0F, 1.5F))
+                }
+                entity
+            }
+            EntityType.PLAYER_DEMO -> {
+                /*entity = Entity(NPCInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())*/
+                entity
+            }
+            EntityType.NPC -> {
+                /*entity = Entity(NPCInputComponent(), NPCPhysicsComponent(), NPCGraphicsComponent())*/
+                /*
+                entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
+            entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(Vector2(0f, 0f)))
+            entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig!!.state))
+            entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig!!.direction))
+                 */
+                entity
+            }
+            else -> null
+        }
+    }
     companion object {
         private val TAG = EntityFactory::class.java.simpleName
         private val json = Json()
@@ -43,29 +84,6 @@ class EntityFactory private constructor() {
                 }
                 return uniqueInstance
             }
-
-        @kotlin.jvm.JvmStatic
-        fun getEntity(entityType: EntityType?): Entity? {
-            var entity: Entity? = null
-            return when (entityType) {
-                EntityType.PLAYER -> {
-
-                    /*entity = Entity(PlayerInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())
-                    entity.entityConfig = Entity.Companion.getEntityConfig(PLAYER_CONFIG)
-                    entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, _json.toJson(entity.entityConfig))*/
-                    entity
-                }
-                EntityType.PLAYER_DEMO -> {
-                    /*entity = Entity(NPCInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())*/
-                    entity
-                }
-                EntityType.NPC -> {
-                    /*entity = Entity(NPCInputComponent(), NPCPhysicsComponent(), NPCGraphicsComponent())*/
-                    entity
-                }
-                else -> null
-            }
-        }
     }
 
     init {
