@@ -5,9 +5,9 @@ import java.util.*
 
 object MapFactory {
     //All maps for the game
-    private val mapTable = Hashtable<MapType, TiledMap>()
-    fun getMap(mapType: MapType?): TiledMap? {
-        var map: TiledMap? = null
+    private val mapTable = Hashtable<MapType, MapController>()
+    fun getMap(mapType: MapType?): MapController? {
+        var map: MapController? = null
         when (mapType) {
             MapType.TOP_WORLD -> {
                 map = mapTable[MapType.TOP_WORLD]

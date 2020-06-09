@@ -14,31 +14,32 @@ import com.badlogic.gdx.utils.Json
 import com.mygdx.game.audio.AudioManager
 import com.mygdx.game.audio.AudioObserver
 import com.mygdx.game.audio.AudioSubject
+import com.mygdx.game.sfx.ParticleEffectFactory
 import java.util.*
 
 abstract class MapController  internal constructor(mapType: MapFactory.MapType, fullMapPath: String?) : AudioSubject {
-    private val observers: Array<AudioObserver>
-    protected var json: Json
-    protected var playerStartPositionRect: Vector2
-    protected var closestPlayerStartPosition: Vector2
-    protected var convertedUnits: Vector2
+    private val observers: Array<AudioObserver> = Array()
+    protected var json: Json = Json()
+    private var playerStartPositionRect: Vector2
+    private var closestPlayerStartPosition: Vector2
+    private var convertedUnits: Vector2
     var currentTiledMap: TiledMap? = null
     protected set
     var playerStart: Vector2
-    protected var npcStartPositions: Array<Vector2>
-    protected var specialNPCStartPositions: Hashtable<String, Vector2>
+    private lateinit var npcStartPositions: Array<Vector2>
+    private lateinit var specialNPCStartPositions: Hashtable<String, Vector2>
     var collisionLayer: MapLayer? = null
     protected set
     var portalLayer: MapLayer? = null
     protected set
-            protected var spawnsLayer: MapLayer? = null
+    private var spawnsLayer: MapLayer? = null
     var questItemSpawnLayer: MapLayer? = null
     protected set
     var questDiscoverLayer: MapLayer? = null
     protected set
     var enemySpawnLayer: MapLayer? = null
     protected set
-            protected var particleEffectSpawnLayer: MapLayer? = null
+    private var particleEffectSpawnLayer: MapLayer? = null
     var lightMapDawnLayer: MapLayer? = null
     protected set
     var lightMapAfternoonLayer: MapLayer? = null
@@ -48,14 +49,11 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
     var lightMapNightLayer: MapLayer? = null
     protected set
     var currentMapType: MapFactory.MapType
-    var mapEntities: Array<Entity>
-    protected set
-    var mapQuestEntities: Array<Entity?>
-    protected set
+
     var mapParticleEffects: Array<ParticleEffect>
     protected set
 
-    fun getParticleEffectSpawnPositions(particleEffectType: ParticleEffectType): Array<Vector2> {
+    fun getParticleEffectSpawnPositions(particleEffectType: ParticleEffectFactory.ParticleEffectType): Array<Vector2> {
         val objects = Array<MapObject>()
         val positions = Array<Vector2>()
         for (`object` in particleEffectSpawnLayer!!.objects) {
@@ -101,19 +99,6 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
         return positions
     }
 
-    fun addMapQuestEntities(entities: Array<Entity?>?) {
-        mapQuestEntities.addAll(entities)
-    }
-
-    fun updateMapEntities(mapMgr: MapManager, batch: Batch, delta: Float) {
-        for (i in 0 until mapEntities.size) {
-            mapEntities[i].update(mapMgr, batch, delta)
-        }
-        for (i in 0 until mapQuestEntities.size) {
-            mapQuestEntities[i]!!.update(mapMgr, batch, delta)
-        }
-    }
-
     fun updateMapEffects(mapMgr: MapManager?, batch: Batch, delta: Float) {
         for (i in 0 until mapParticleEffects.size) {
             batch.begin()
@@ -123,12 +108,6 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
     }
 
     fun dispose() {
-        for (i in 0 until mapEntities.size) {
-            mapEntities[i].dispose()
-        }
-        for (i in 0 until mapQuestEntities.size) {
-            mapQuestEntities[i]!!.dispose()
-        }
         for (i in 0 until mapParticleEffects.size) {
             mapParticleEffects[i].dispose()
         }
@@ -277,10 +256,6 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
     }
 
     init {
-        json = Json()
-        mapEntities = Array(10)
-        observers = Array()
-        mapQuestEntities = Array()
         mapParticleEffects = Array()
         currentMapType = mapType
         playerStart = Vector2(0F, 0F)
@@ -292,66 +267,67 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
                 Gdx.app.debug(TAG, "Map is invalid")
                 return@run
             }
-        }
-        Utility.loadMapAsset(fullMapPath)
-        run {
+
+            Utility.loadMapAsset(fullMapPath)
+
             if (Utility.isAssetLoaded(fullMapPath)) {
                 currentTiledMap = Utility.getMapAsset(fullMapPath)
             } else {
                 Gdx.app.debug(TAG, "Map not loaded")
                 return@run
             }
-        }
-        collisionLayer = currentTiledMap!!.layers[COLLISION_LAYER]
-        if (collisionLayer == null) {
-            Gdx.app.debug(TAG, "No collision layer!")
-        }
-        portalLayer = currentTiledMap!!.layers[PORTAL_LAYER]
-        if (portalLayer == null) {
-            Gdx.app.debug(TAG, "No portal layer!")
-        }
-        spawnsLayer = currentTiledMap!!.layers[SPAWNS_LAYER]
-        if (spawnsLayer == null) {
-            Gdx.app.debug(TAG, "No spawn layer!")
-        } else {
-            setClosestStartPosition(playerStart)
-        }
-        questItemSpawnLayer = currentTiledMap!!.layers[QUEST_ITEM_SPAWN_LAYER]
-        if (questItemSpawnLayer == null) {
-            Gdx.app.debug(TAG, "No quest item spawn layer!")
-        }
-        questDiscoverLayer = currentTiledMap!!.layers[QUEST_DISCOVER_LAYER]
-        if (questDiscoverLayer == null) {
-            Gdx.app.debug(TAG, "No quest discover layer!")
-        }
-        enemySpawnLayer = currentTiledMap!!.layers[ENEMY_SPAWN_LAYER]
-        if (enemySpawnLayer == null) {
-            Gdx.app.debug(TAG, "No enemy layer found!")
-        }
-        lightMapDawnLayer = currentTiledMap!!.layers[LIGHTMAP_DAWN_LAYER]
-        if (lightMapDawnLayer == null) {
-            Gdx.app.debug(TAG, "No dawn lightmap layer found!")
-        }
-        lightMapAfternoonLayer = currentTiledMap!!.layers[LIGHTMAP_AFTERNOON_LAYER]
-        if (lightMapAfternoonLayer == null) {
-            Gdx.app.debug(TAG, "No afternoon lightmap layer found!")
-        }
-        lightMapDuskLayer = currentTiledMap!!.layers[LIGHTMAP_DUSK_LAYER]
-        if (lightMapDuskLayer == null) {
-            Gdx.app.debug(TAG, "No dusk lightmap layer found!")
-        }
-        lightMapNightLayer = currentTiledMap!!.layers[LIGHTMAP_NIGHT_LAYER]
-        if (lightMapNightLayer == null) {
-            Gdx.app.debug(TAG, "No night lightmap layer found!")
-        }
-        particleEffectSpawnLayer = currentTiledMap!!.layers[PARTICLE_EFFECT_SPAWN_LAYER]
-        if (particleEffectSpawnLayer == null) {
-            Gdx.app.debug(TAG, "No particle effect spawn layer!")
-        }
-        npcStartPositions = nPCStartPositions
-        specialNPCStartPositions = scaledSpecialNPCStartPositions()
 
-        //Observers
-        addObserver(AudioManager.instance!!)
+            collisionLayer = currentTiledMap!!.layers[COLLISION_LAYER]
+            if (collisionLayer == null) {
+                Gdx.app.debug(TAG, "No collision layer!")
+            }
+            portalLayer = currentTiledMap!!.layers[PORTAL_LAYER]
+            if (portalLayer == null) {
+                Gdx.app.debug(TAG, "No portal layer!")
+            }
+            spawnsLayer = currentTiledMap!!.layers[SPAWNS_LAYER]
+            if (spawnsLayer == null) {
+                Gdx.app.debug(TAG, "No spawn layer!")
+            } else {
+                setClosestStartPosition(playerStart)
+            }
+            questItemSpawnLayer = currentTiledMap!!.layers[QUEST_ITEM_SPAWN_LAYER]
+            if (questItemSpawnLayer == null) {
+                Gdx.app.debug(TAG, "No quest item spawn layer!")
+            }
+            questDiscoverLayer = currentTiledMap!!.layers[QUEST_DISCOVER_LAYER]
+            if (questDiscoverLayer == null) {
+                Gdx.app.debug(TAG, "No quest discover layer!")
+            }
+            enemySpawnLayer = currentTiledMap!!.layers[ENEMY_SPAWN_LAYER]
+            if (enemySpawnLayer == null) {
+                Gdx.app.debug(TAG, "No enemy layer found!")
+            }
+            lightMapDawnLayer = currentTiledMap!!.layers[LIGHTMAP_DAWN_LAYER]
+            if (lightMapDawnLayer == null) {
+                Gdx.app.debug(TAG, "No dawn lightmap layer found!")
+            }
+            lightMapAfternoonLayer = currentTiledMap!!.layers[LIGHTMAP_AFTERNOON_LAYER]
+            if (lightMapAfternoonLayer == null) {
+                Gdx.app.debug(TAG, "No afternoon lightmap layer found!")
+            }
+            lightMapDuskLayer = currentTiledMap!!.layers[LIGHTMAP_DUSK_LAYER]
+            if (lightMapDuskLayer == null) {
+                Gdx.app.debug(TAG, "No dusk lightmap layer found!")
+            }
+            lightMapNightLayer = currentTiledMap!!.layers[LIGHTMAP_NIGHT_LAYER]
+            if (lightMapNightLayer == null) {
+                Gdx.app.debug(TAG, "No night lightmap layer found!")
+            }
+            particleEffectSpawnLayer = currentTiledMap!!.layers[PARTICLE_EFFECT_SPAWN_LAYER]
+            if (particleEffectSpawnLayer == null) {
+                Gdx.app.debug(TAG, "No particle effect spawn layer!")
+            }
+            npcStartPositions = nPCStartPositions
+            specialNPCStartPositions = scaledSpecialNPCStartPositions()
+
+            //Observers
+            addObserver(AudioManager.instance!!)
+        }
     }
 }
