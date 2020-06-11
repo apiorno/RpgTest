@@ -1,6 +1,5 @@
-package com.mygdx.game
+package com.mygdx.game.maps
 
-import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.graphics.g2d.ParticleEffect
@@ -11,14 +10,15 @@ import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
+import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioManager
 import com.mygdx.game.audio.AudioObserver
 import com.mygdx.game.audio.AudioSubject
 import com.mygdx.game.sfx.ParticleEffectFactory
 import java.util.*
 
-abstract class MapController  internal constructor(mapType: MapFactory.MapType, fullMapPath: String?) : AudioSubject {
-    private val observers: Array<AudioObserver> = Array()
+ class MapController  (private val mapContentController: MapContentController){
+
     protected var json: Json = Json()
     private var playerStartPositionRect: Vector2
     private var closestPlayerStartPosition: Vector2
@@ -26,8 +26,8 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
     var currentTiledMap: TiledMap? = null
     protected set
     var playerStart: Vector2
-    private lateinit var npcStartPositions: Array<Vector2>
-    private lateinit var specialNPCStartPositions: Hashtable<String, Vector2>
+    lateinit var npcStartPositions: Array<Vector2>
+    lateinit var specialNPCStartPositions: Hashtable<String, Vector2>
     var collisionLayer: MapLayer? = null
     protected set
     var portalLayer: MapLayer? = null
@@ -48,11 +48,17 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
     protected set
     var lightMapNightLayer: MapLayer? = null
     protected set
-    var currentMapType: MapFactory.MapType
-
     var mapParticleEffects: Array<ParticleEffect>
     protected set
 
+     val currentMapType: MapFactory.MapType?
+         get() = mapContentController.mapType
+     fun loadMusic(){
+         mapContentController.loadMusic()
+     }
+     fun unloadMusic(){
+         mapContentController.unloadMusic()
+     }
     fun getParticleEffectSpawnPositions(particleEffectType: ParticleEffectFactory.ParticleEffectType): Array<Vector2> {
         val objects = Array<MapObject>()
         val positions = Array<Vector2>()
@@ -177,7 +183,7 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
     }
 
     private fun setClosestStartPosition(position: Vector2) {
-        Gdx.app.debug(TAG, "setClosestStartPosition INPUT: (" + position.x + "," + position.y + ") " + currentMapType.toString())
+        Gdx.app.debug(TAG, "setClosestStartPosition INPUT: (" + position.x + "," + position.y + ") " + mapContentController.mapType.toString())
 
         //Get last known position on this map
         playerStartPositionRect[0f] = 0f
@@ -193,11 +199,11 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
             if (objectName.equals(PLAYER_START, ignoreCase = true)) {
                 (`object` as RectangleMapObject).rectangle.getPosition(playerStartPositionRect)
                 val distance = position.dst2(playerStartPositionRect)
-                Gdx.app.debug(TAG, "DISTANCE: $distance for $currentMapType")
+                Gdx.app.debug(TAG, "DISTANCE: $distance for $mapContentController.mapType")
                 if (distance < shortestDistance || shortestDistance == 0f) {
                     closestPlayerStartPosition.set(playerStartPositionRect)
                     shortestDistance = distance
-                    Gdx.app.debug(TAG, "closest START is: (" + closestPlayerStartPosition.x + "," + closestPlayerStartPosition.y + ") " + currentMapType.toString())
+                    Gdx.app.debug(TAG, "closest START is: (" + closestPlayerStartPosition.x + "," + closestPlayerStartPosition.y + ") " + mapContentController.mapType.toString())
                 }
             }
         }
@@ -210,28 +216,10 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
         setClosestStartPosition(convertedUnits)
     }
 
-    abstract fun unloadMusic()
-    abstract fun loadMusic()
-    override fun addObserver(audioObserver: AudioObserver) {
-        observers.add(audioObserver)
-    }
 
-    override fun removeObserver(audioObserver: AudioObserver) {
-        observers.removeValue(audioObserver, true)
-    }
-
-    override fun removeAllObservers() {
-        observers.removeAll(observers, true)
-    }
-
-    override fun notify(command: AudioObserver.AudioCommand, event: AudioObserver.AudioTypeEvent) {
-        for (observer in observers) {
-            observer.onNotify(command, event)
-        }
-    }
 
     companion object {
-        private val TAG = Map::class.java.simpleName
+        private val TAG = MapController::class.java.simpleName
         const val UNIT_SCALE = 1 / 16f
 
         //Map layers
@@ -257,25 +245,14 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
 
     init {
         mapParticleEffects = Array()
-        currentMapType = mapType
         playerStart = Vector2(0F, 0F)
         playerStartPositionRect = Vector2(0F, 0F)
         closestPlayerStartPosition = Vector2(0F, 0F)
         convertedUnits = Vector2(0F, 0F)
         run {
-            if (fullMapPath == null || fullMapPath.isEmpty()) {
-                Gdx.app.debug(TAG, "Map is invalid")
-                return@run
-            }
 
-            Utility.loadMapAsset(fullMapPath)
-
-            if (Utility.isAssetLoaded(fullMapPath)) {
-                currentTiledMap = Utility.getMapAsset(fullMapPath)
-            } else {
-                Gdx.app.debug(TAG, "Map not loaded")
-                return@run
-            }
+                currentTiledMap = mapContentController.loadMap()
+            if (currentTiledMap==null) return@run
 
             collisionLayer = currentTiledMap!!.layers[COLLISION_LAYER]
             if (collisionLayer == null) {
@@ -326,8 +303,7 @@ abstract class MapController  internal constructor(mapType: MapFactory.MapType, 
             npcStartPositions = nPCStartPositions
             specialNPCStartPositions = scaledSpecialNPCStartPositions()
 
-            //Observers
-            addObserver(AudioManager.instance!!)
+            mapContentController.addObserver(AudioManager.instance!!)
         }
     }
 }
