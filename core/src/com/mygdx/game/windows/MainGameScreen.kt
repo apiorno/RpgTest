@@ -11,6 +11,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.utils.Json
 import com.mygdx.game.MyGdxGame
 import com.mygdx.game.ScreenManager.*
+import com.mygdx.game.maps.MapManager
 import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.temporal.EntityFactory
 
@@ -99,18 +100,16 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
             game.setScreenOfType(ScreenType.GameOver)
         }
         if (gameState == GameState.PAUSED) {
-            player!!.updateInput(delta)
+            player.updateInput(delta)
             playerHUD.render(delta)
             return
         }
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        mapRenderer!!.setView(camera)
-        mapRenderer!!.batch.enableBlending()
-        mapRenderer!!.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        mapMgr.preRenderMap()
         if (mapMgr.hasMapChanged()) {
-            mapRenderer!!.map = mapMgr.currentTiledMap
-            player.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(mapMgr.playerStartUnitScaled))
+            mapMgr.changeRendererMap()
+            //player.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(mapMgr.playerStartUnitScaled))
             camera.position[mapMgr.playerStartUnitScaled!!.x, mapMgr.playerStartUnitScaled!!.y] = 0f
             camera.update()
             playerHUD.updateEntityObservers()
