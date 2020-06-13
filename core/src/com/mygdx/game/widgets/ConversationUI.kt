@@ -3,6 +3,7 @@ package com.mygdx.game.widgets
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.ui.List
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.Window
@@ -17,13 +18,13 @@ import com.mygdx.game.dialog.ConversationGraph
 
 class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground") {
     private val dialogText: Label
-    private val listItems: com.badlogic.gdx.scenes.scene2d.ui.List<*>
+    private val listItems: List<ConversationChoice>
     var currentConversationGraph: ConversationGraph?
         private set
     var currentEntityID: String? = null
         private set
     val closeButton: TextButton
-    private val json: Json
+    private val json: Json = Json()
 
     fun loadConversation(entityConfig: EntityConfig) {
         val fullFilenamePath = entityConfig.conversationConfigPath
@@ -65,7 +66,6 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
     }
 
     init {
-        json = Json()
         currentConversationGraph = ConversationGraph()
 
         //create
@@ -96,7 +96,7 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
         //Listeners
         listItems.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                val choice = listItems.selected as ConversationChoice ?: return
+                val choice = listItems.selected as ConversationChoice
                 currentConversationGraph!!.notify(currentConversationGraph, choice.conversationCommandEvent)
                 populateConversationDialog(choice.destinationId)
             }

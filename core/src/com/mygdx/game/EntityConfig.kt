@@ -1,9 +1,13 @@
 package com.mygdx.game
 
 import AnimationType
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.GridPoint2
 import com.badlogic.gdx.utils.Array
+import com.badlogic.gdx.utils.Json
+import com.badlogic.gdx.utils.JsonValue
 import com.badlogic.gdx.utils.ObjectMap
+import java.util.ArrayList
 
 class EntityConfig {
     var animationConfig: Array<AnimationConfig>
@@ -62,5 +66,24 @@ class EntityConfig {
         var texturePaths: Array<String> = Array()
         var gridPoints: Array<GridPoint2> = Array()
 
+    }
+    companion object{
+
+        @kotlin.jvm.JvmStatic
+    fun getEntityConfig(configFilePath: String?): EntityConfig {
+        val json = Json()
+        return json.fromJson(EntityConfig::class.java, Gdx.files.internal(configFilePath))
+    }
+
+    @kotlin.jvm.JvmStatic
+    fun getEntityConfigs(configFilePath: String?): Array<EntityConfig> {
+        val json = Json()
+        val configs = Array<EntityConfig>()
+        val list: ArrayList<JsonValue> = json.fromJson(ArrayList::class.java, Gdx.files.internal(configFilePath)) as ArrayList<JsonValue>
+        for (jsonVal in list) {
+            configs.add(json.readValue(EntityConfig::class.java, jsonVal))
+        }
+        return configs
+    }
     }
 }
