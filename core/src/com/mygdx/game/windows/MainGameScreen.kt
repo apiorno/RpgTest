@@ -116,45 +116,7 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
             mapMgr.setMapChanged(false)
             playerHUD.addTransitionToScreen()
         }
-        mapMgr.updateLightMaps(playerHUD.currentTimeOfDay)
-        val lightMap = mapMgr.currentLightMapLayer as TiledMapImageLayer?
-        val previousLightMap = mapMgr.previousLightMapLayer as TiledMapImageLayer?
-        if (lightMap != null) {
-            mapRenderer!!.batch.begin()
-            val backgroundMapLayer = mapMgr.currentTiledMap!!.layers[Map.BACKGROUND_LAYER] as TiledMapTileLayer
-            if (backgroundMapLayer != null) {
-                mapRenderer!!.renderTileLayer(backgroundMapLayer)
-            }
-            val groundMapLayer = mapMgr.currentTiledMap!!.layers[Map.GROUND_LAYER] as TiledMapTileLayer
-            if (groundMapLayer != null) {
-                mapRenderer!!.renderTileLayer(groundMapLayer)
-            }
-            val decorationMapLayer = mapMgr.currentTiledMap!!.layers[Map.DECORATION_LAYER] as TiledMapTileLayer
-            if (decorationMapLayer != null) {
-                mapRenderer!!.renderTileLayer(decorationMapLayer)
-            }
-            mapRenderer!!.batch.end()
-            mapMgr.updateCurrentMapEntities(mapMgr, mapRenderer!!.batch, delta)
-            player!!.update(mapMgr, mapRenderer!!.batch, delta)
-            mapMgr.updateCurrentMapEffects(mapMgr, mapRenderer!!.batch, delta)
-            mapRenderer!!.batch.begin()
-            mapRenderer!!.batch.setBlendFunction(GL20.GL_DST_COLOR, GL20.GL_ONE_MINUS_SRC_ALPHA)
-            mapRenderer!!.renderImageLayer(lightMap)
-            mapRenderer!!.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-            mapRenderer!!.batch.end()
-            if (previousLightMap != null) {
-                mapRenderer!!.batch.begin()
-                mapRenderer!!.batch.setBlendFunction(GL20.GL_DST_COLOR, GL20.GL_ONE_MINUS_SRC_COLOR)
-                mapRenderer!!.renderImageLayer(previousLightMap)
-                mapRenderer!!.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-                mapRenderer!!.batch.end()
-            }
-        } else {
-            mapRenderer!!.render()
-            mapMgr.updateCurrentMapEntities(mapMgr, mapRenderer!!.batch, delta)
-            player!!.update(mapMgr, mapRenderer!!.batch, delta)
-            mapMgr.updateCurrentMapEffects(mapMgr, mapRenderer!!.batch, delta)
-        }
+        mapMgr.renderMap()
         playerHUD.render(delta)
     }
 
