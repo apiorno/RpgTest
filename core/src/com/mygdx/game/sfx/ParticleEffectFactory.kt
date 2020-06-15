@@ -8,7 +8,7 @@ object ParticleEffectFactory {
     private const val SFX_ROOT_DIR = "sfx"
 
 
-    private fun getParticleEffect(particleEffectType: ParticleEffectType, positionX: Float, positionY: Float): ParticleEffect {
+    fun getParticleEffect(particleEffectType: ParticleEffectType, positionX: Float, positionY: Float): ParticleEffect {
         val effect = ParticleEffect()
         effect.load(Gdx.files.internal(particleEffectType.value), Gdx.files.internal(SFX_ROOT_DIR))
         effect.setPosition(positionX, positionY)

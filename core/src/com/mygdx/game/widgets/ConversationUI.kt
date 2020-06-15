@@ -46,6 +46,7 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
         populateConversationDialog(currentConversationGraph!!.currentConversationID)
     }
 
+    @Suppress("CAST_NEVER_SUCCEEDS")
     private fun populateConversationDialog(conversationID: String?) {
         clearDialog()
         val conversation = currentConversationGraph!!.getConversationByID(conversationID) ?: return

@@ -13,7 +13,7 @@ class ScreenManager(game: MyGdxGame) {
     private var loadGameScreen: LoadGameScreen? = null
     private var newGameScreen: NewGameScreen? = null
     private var gameOverScreen: GameOverScreen? = null
-    //private var cutSceneScreen: CutSceneScreen? = null
+    private var cutSceneScreen: CutSceneScreen? = null
     private var creditScreen: CreditScreen? = null
 
     init {
@@ -22,7 +22,7 @@ class ScreenManager(game: MyGdxGame) {
         loadGameScreen = LoadGameScreen(game)
         newGameScreen = NewGameScreen(game)
         gameOverScreen = GameOverScreen(game)
-        //cutSceneScreen = CutSceneScreen(game)
+        cutSceneScreen = CutSceneScreen(game)
         creditScreen = CreditScreen(game)
     }
 
@@ -33,7 +33,7 @@ class ScreenManager(game: MyGdxGame) {
             ScreenType.LoadGame -> loadGameScreen
             ScreenType.NewGame -> newGameScreen
             ScreenType.GameOver -> gameOverScreen
-            /*ScreenType.WatchIntro -> cutSceneScreen*/
+            ScreenType.WatchIntro -> cutSceneScreen
             ScreenType.Credits -> creditScreen
             else -> mainMenuScreen
         }

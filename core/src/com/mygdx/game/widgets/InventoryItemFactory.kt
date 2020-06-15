@@ -40,7 +40,7 @@ class InventoryItemFactory private constructor() {
     }
 
     init {
-        val list: ArrayList<JsonValue> = json.fromJson(ArrayList::class.java, Gdx.files.internal(INVENTORY_ITEM)) as ArrayList<JsonValue>
+        @Suppress("UNCHECKED_CAST") val list: ArrayList<JsonValue> = json.fromJson(ArrayList::class.java, Gdx.files.internal(INVENTORY_ITEM)) as ArrayList<JsonValue>
         inventoryItemList = Hashtable()
         for (jsonVal in list) {
             val inventoryItem = json.readValue(InventoryItem::class.java, jsonVal)

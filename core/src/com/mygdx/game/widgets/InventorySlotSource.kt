@@ -7,7 +7,7 @@ class InventorySlotSource(var sourceSlot: InventorySlot, private val dragAndDrop
     override fun dragStart(event: InputEvent, x: Float, y: Float, pointer: Int): DragAndDrop.Payload? {
         val payload = DragAndDrop.Payload()
         val actor = actor ?: return null
-        val source = actor.parent as InventorySlot
+        val source = actor.parent as InventorySlot?
         if (source == null)  return null else  sourceSlot = source
 
         sourceSlot.decrementItemCount(true)

@@ -2,10 +2,8 @@ package com.mygdx.game.maps
 
 import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.g2d.Batch
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.TiledMapImageLayer
@@ -14,6 +12,7 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
+import com.mygdx.game.EntityConfig
 import com.mygdx.game.maps.MapController.Companion.BACKGROUND_LAYER
 import com.mygdx.game.maps.MapController.Companion.DECORATION_LAYER
 import com.mygdx.game.maps.MapController.Companion.GROUND_LAYER
@@ -22,13 +21,13 @@ import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.profile.ProfileObserver
 import com.mygdx.game.sfx.ClockActor.*
 
-class MapManager : ProfileObserver {
-    protected var mapRenderer: OrthogonalTiledMapRenderer? = null
+open class MapManager : ProfileObserver {
+    private var mapRenderer: OrthogonalTiledMapRenderer? = null
     lateinit var camera: OrthographicCamera
     private var mapChanged = false
     private  var currentMapController: MapController? = null
-    lateinit var player: Entity
-    private lateinit var currentSelectedMapEntity: Entity
+    lateinit var playerConfig: EntityConfig
+    var currentSelectedMapEntityConfig: EntityConfig?=null
     var currentLightMapLayer: MapLayer? = null
         private set
     private  var previousLightMapLayer: MapLayer? = null
@@ -47,29 +46,29 @@ class MapManager : ProfileObserver {
         mapRenderer!!.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
     }
     fun changeRendererMap(){
-        mapRenderer?.map=currentMapController.currentTiledMap
+        mapRenderer?.map=currentMapController?.currentTiledMap
     }
     fun renderMap(){
         val lightMap = currentLightMapLayer as TiledMapImageLayer?
         val previousLightMap = previousLightMapLayer as TiledMapImageLayer?
         if (lightMap != null) {
             mapRenderer!!.batch.begin()
-            val backgroundMapLayer = currentTiledMap!!.layers[BACKGROUND_LAYER] as TiledMapTileLayer
+            val backgroundMapLayer = currentTiledMap!!.layers[BACKGROUND_LAYER] as TiledMapTileLayer?
             if (backgroundMapLayer != null) {
                 mapRenderer!!.renderTileLayer(backgroundMapLayer)
             }
-            val groundMapLayer = currentTiledMap!!.layers[GROUND_LAYER] as TiledMapTileLayer
+            val groundMapLayer = currentTiledMap!!.layers[GROUND_LAYER] as TiledMapTileLayer?
             if (groundMapLayer != null) {
                 mapRenderer!!.renderTileLayer(groundMapLayer)
             }
-            val decorationMapLayer = currentTiledMap!!.layers[DECORATION_LAYER] as TiledMapTileLayer
+            val decorationMapLayer = currentTiledMap!!.layers[DECORATION_LAYER] as TiledMapTileLayer?
             if (decorationMapLayer != null) {
                 mapRenderer!!.renderTileLayer(decorationMapLayer)
             }
             mapRenderer!!.batch.end()
-            updateCurrentMapEntities(this, mapRenderer!!.batch, delta)
+            /*updateCurrentMapEntities(this, mapRenderer!!.batch, delta)
             player.update(this, mapRenderer!!.batch, delta)
-            updateCurrentMapEffects(this, mapRenderer!!.batch, delta)
+            updateCurrentMapEffects(this, mapRenderer!!.batch, delta)*/
             mapRenderer!!.batch.begin()
             mapRenderer!!.batch.setBlendFunction(GL20.GL_DST_COLOR, GL20.GL_ONE_MINUS_SRC_ALPHA)
             mapRenderer!!.renderImageLayer(lightMap)
@@ -84,10 +83,30 @@ class MapManager : ProfileObserver {
             }
         } else {
             mapRenderer!!.render()
-            updateCurrentMapEntities(this, mapRenderer!!.batch, delta)
+            /*updateCurrentMapEntities(this, mapRenderer!!.batch, delta)
             player!!.update(this, mapRenderer!!.batch, delta)
-            updateCurrentMapEffects(this, mapRenderer!!.batch, delta)
+            updateCurrentMapEffects(this, mapRenderer!!.batch, delta)*/
         }
+    }
+    fun clearCurrentSelectedMapEntityConfig() {
+        if (currentSelectedMapEntityConfig == null) return
+        //sendMessage(MESSAGE.ENTITY_DESELECTED)
+        currentSelectedMapEntityConfig = null
+    }
+    fun removeMapQuestEntity(entityConfig: EntityConfig) {
+        //entity.unregisterObservers()
+        val positions = ProfileManager.instance.getProperty(entityConfig.entityID!!, Array::class.java) as Array<Vector2>
+                ?: return
+       /* for (position in positions) {
+            if (position.x == entity.currentPosition.x &&
+                    position.y == entity.currentPosition.y) {
+                positions.removeValue(position, true)
+                break
+            }
+        }*/
+
+        //currentMap.getMapQuestEntities().removeValue(entity, true)
+        ProfileManager.instance.setProperty(entityConfig.entityID!!, positions)
     }
     override fun onNotify(profileManager: ProfileManager?, event: ProfileObserver.ProfileEvent?) {
         when (event) {
@@ -155,8 +174,8 @@ class MapManager : ProfileObserver {
         currentMapController = map
         mapChanged = true
         //clearCurrentSelectedMapEntity()
-        val curenntMapPlayerStart = playerStartsByMap[currentMapController]!!
-        Gdx.app.debug(TAG, "Player Start: (" + curenntMapPlayerStart.x + "," + curenntMapPlayerStart.y + ")")
+        //val curenntMapPlayerStart = playerStartsByMap[currentMapController!!]!!
+        //Gdx.app.debug(TAG, "Player Start: (" + curenntMapPlayerStart.x + "," + curenntMapPlayerStart.y + ")")
     }
 
     fun disableCurrentmapMusic() {

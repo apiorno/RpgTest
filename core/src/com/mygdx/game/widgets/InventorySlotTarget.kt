@@ -19,7 +19,7 @@ class InventorySlotTarget(var targetSlot: InventorySlot) : DragAndDrop.Target(ta
         //First, does the slot accept the source item type?
         if (!targetSlot.doesAcceptItemUseType(sourceActor.itemUseType)) {
             //Put item back where it came from, slot doesn't accept item
-            sourceSlot!!.add(sourceActor)
+            sourceSlot.add(sourceActor)
             return
         }
         if (!targetSlot.hasItem()) {

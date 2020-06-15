@@ -23,6 +23,15 @@ import java.util.*
       fun getMonsterConfigByType(monsterEntityType: MonsterFactory.MonsterEntityType): EntityConfig? {
             return entities[monsterEntityType.toString()]
      }
+     fun getMonsterConfigByZoneID(monsterZoneID: Int): EntityConfig? {
+         val monsters = monsterZones[monsterZoneID.toString()]
+         val size = monsters!!.size
+         if (size == 0) {
+             return null
+         }
+         val randomIndex = MathUtils.random(size - 1)
+         return getMonsterConfigByType(monsters[randomIndex])
+     }
 
      fun getRandomMonster(monsterZoneID: Int): Entity? {
         val monsters = monsterZones[monsterZoneID.toString()]

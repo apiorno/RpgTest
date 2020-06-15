@@ -17,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 
 object Utility {
 
-    val assetManager = AssetManager()
+    private val assetManager = AssetManager()
     private val TAG = Utility::class.java.simpleName
     private val filePathResolver = InternalFileHandleResolver()
     private const val STATUSUI_TEXTURE_ATLAS_PATH = "skins/statusui.atlas"

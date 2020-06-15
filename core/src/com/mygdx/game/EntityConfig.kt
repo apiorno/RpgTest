@@ -7,12 +7,13 @@ import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonValue
 import com.badlogic.gdx.utils.ObjectMap
+import com.mygdx.game.widgets.InventoryItem.*
 import java.util.ArrayList
 
 class EntityConfig {
     var animationConfig: Array<AnimationConfig>
         private set
-    //var inventory: Array<ItemTypeID>
+    var inventory: Array<ItemTypeID>
     var state = State.IDLE
     var direction = Direction.DOWN
     var entityID: String? = null
@@ -28,7 +29,7 @@ class EntityConfig {
 
     internal constructor() {
         animationConfig = Array()
-        //inventory = Array()
+        inventory = Array()
         entityProperties = ObjectMap()
     }
 
@@ -42,8 +43,8 @@ class EntityConfig {
         itemTypeID = config.itemTypeID
         animationConfig = Array()
         animationConfig.addAll(config.animationConfig)
-        /*inventory = Array()
-        inventory.addAll(config.inventory)*/
+        inventory = Array()
+        inventory.addAll(config.inventory)
         entityProperties = ObjectMap()
         entityProperties.putAll(config.entityProperties)
     }
@@ -75,6 +76,7 @@ class EntityConfig {
         return json.fromJson(EntityConfig::class.java, Gdx.files.internal(configFilePath))
     }
 
+    @Suppress("UNCHECKED_CAST")
     @kotlin.jvm.JvmStatic
     fun getEntityConfigs(configFilePath: String?): Array<EntityConfig> {
         val json = Json()

@@ -50,7 +50,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         val sourceCells = inventorySlotTable.cells
         var index = 0
         while (index < sourceCells.size) {
-            val inventorySlot = sourceCells[index].actor as InventorySlot
+            val inventorySlot = sourceCells[index].actor as InventorySlot?
             if (inventorySlot == null) {
                 index++
                 continue
@@ -70,7 +70,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         val sourceCells = inventorySlotTable.cells
         var index = 0
         while (index < sourceCells.size) {
-            val inventorySlot = sourceCells[index].actor as InventorySlot
+            val inventorySlot = sourceCells[index].actor as InventorySlot?
             if (inventorySlot == null) {
                 index.inc()
                 continue
@@ -128,7 +128,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         fun clearInventoryItems(targetTable: Table?) {
             val cells = targetTable!!.cells
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot ?: continue
+                val inventorySlot = cells[i].actor as InventorySlot
                 inventorySlot.clearAllInventoryItems(false)
             }
         }
@@ -189,7 +189,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             val cells = targetTable.cells
             val items = Array<InventoryItemLocation>()
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot ?: continue
+                val inventorySlot = cells[i].actor as InventorySlot
                 val numItems = inventorySlot.numItems
                 if (numItems > 0) {
                     val topItemName = inventorySlot.topInventoryItem?.name
@@ -209,7 +209,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             val cells = targetTable.cells
             val items = Array<InventoryItemLocation>()
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot ?: continue
+                val inventorySlot = cells[i].actor as InventorySlot
                 val numItems = inventorySlot.getNumItems(name)
                 if (numItems > 0) {
                     //System.out.println("[i] " + i + " itemtype: " + inventorySlot.getTopInventoryItem().getItemTypeID().toString() + " numItems " + numItems);
@@ -229,7 +229,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             var index = 0
             for (item in items) {
                 while (index < sourceCells.size) {
-                    val inventorySlot = sourceCells[index].actor as InventorySlot
+                    val inventorySlot = sourceCells[index].actor as InventorySlot?
                     if (inventorySlot == null) {
                         index++
                         continue

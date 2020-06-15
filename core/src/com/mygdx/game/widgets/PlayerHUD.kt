@@ -1,6 +1,6 @@
 package com.mygdx.game.widgets
 
-import com.badlogic.ashley.core.Entity
+import MESSAGE_TOKEN
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.scenes.scene2d.InputEvent
@@ -16,16 +16,32 @@ import com.mygdx.game.EntityConfig
 import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioManager
 import com.mygdx.game.audio.AudioObserver
+import com.mygdx.game.audio.AudioObserver.*
 import com.mygdx.game.audio.AudioSubject
+import com.mygdx.game.dialog.ConversationGraph
 import com.mygdx.game.maps.MapManager
 import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.profile.ProfileObserver
+import com.mygdx.game.quests.QuestGraph
 import com.mygdx.game.sfx.ClockActor
 import com.mygdx.game.sfx.ScreenTransitionAction
 import com.mygdx.game.sfx.ScreenTransitionActor
+import com.mygdx.game.sfx.ShakeCamera
 import com.mygdx.game.temporal.*
+import com.mygdx.game.temporal.BattleObserver.*
+import com.mygdx.game.temporal.ConversationGraphObserver.*
+import com.mygdx.game.temporal.InventoryObserver.*
+import com.mygdx.game.temporal.StatusObserver.*
+import com.mygdx.game.temporal.StoreInventoryObserver.*
+import com.mygdx.game.temporal.ComponentObserver.*
+import com.mygdx.game.widgets.InventoryItem.Companion.doesRestoreHP
+import com.mygdx.game.widgets.InventoryItem.Companion.doesRestoreMP
+import com.mygdx.game.widgets.InventoryItem.*
+import com.mygdx.game.windows.MainGameScreen.*
+import com.mygdx.game.windows.MainGameScreen.Companion.setGameState
 
-class PlayerHUD(private val camera: Camera, private val player: Entity, private val mapMgr: MapManager) : Screen, AudioSubject, ProfileObserver, ConversationGraphObserver, StoreInventoryObserver, BattleObserver, InventoryObserver, StatusObserver {
+
+class PlayerHUD(private val camera: Camera, private val playerConfig: EntityConfig, private val mapMgr: MapManager) : Screen, AudioSubject, ProfileObserver, ConversationGraphObserver, StoreInventoryObserver, BattleObserver, InventoryObserver, StatusObserver, ComponentObserver {
     val stage: Stage
     private val viewport: Viewport
     private val statusUI: StatusUI
@@ -45,9 +61,9 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         get() = clock.currentTimeOfDay
 
     fun updateEntityObservers() {
-        mapMgr.unregisterCurrentMapEntityObservers()
+        //mapMgr.unregisterCurrentMapEntityObservers()
         questUI.initQuests(mapMgr)
-        mapMgr.registerCurrentMapEntityObservers(this)
+        //mapMgr.registerCurrentMapEntityObservers(this)
     }
 
     fun addTransitionToScreen() {
@@ -57,26 +73,25 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
                         Actions.addAction(ScreenTransitionAction.transition(ScreenTransitionAction.ScreenTransitionType.FADE_IN, 1f), transitionActor)))
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun onNotify(profileManager: ProfileManager?, event: ProfileObserver.ProfileEvent?) {
         when (event) {
             ProfileObserver.ProfileEvent.PROFILE_LOADED -> {
-                val firstTime: Boolean = profileManager.getIsNewProfile()
+                val firstTime: Boolean = profileManager?.isNewProfile!!
                 if (firstTime) {
-                    InventoryUI.Companion.clearInventoryItems(inventoryUI.inventorySlotTable)
-                    InventoryUI.Companion.clearInventoryItems(inventoryUI.equipSlotTable)
+                    InventoryUI.clearInventoryItems(inventoryUI.inventorySlotTable)
+                    InventoryUI.clearInventoryItems(inventoryUI.equipSlotTable)
                     inventoryUI.resetEquipSlots()
                     questUI.quests = Array()
 
                     //add default items if first time
-                    val items = player.entityConfig!!.inventory
+                    val items = playerConfig.inventory
                     val itemLocations = Array<InventoryItemLocation>()
-                    var i = 0
-                    while (i < items.size) {
-                        itemLocations.add(InventoryItemLocation(i, items[i].toString(), 1, InventoryUI.Companion.PLAYER_INVENTORY))
-                        i++
+                    for(i in 0 until items.size){
+                        itemLocations.add(InventoryItemLocation(i, items[i].toString(), 1, InventoryUI.PLAYER_INVENTORY))
                     }
-                    InventoryUI.Companion.populateInventory(inventoryUI.inventorySlotTable, itemLocations, inventoryUI.dragAndDrop, InventoryUI.Companion.PLAYER_INVENTORY, false)
-                    profileManager!!.setProperty("playerInventory", InventoryUI.Companion.getInventory(inventoryUI.inventorySlotTable))
+                    InventoryUI.populateInventory(inventoryUI.inventorySlotTable, itemLocations, inventoryUI.dragAndDrop, InventoryUI.PLAYER_INVENTORY, false)
+                    profileManager.setProperty("playerInventory", InventoryUI.getInventory(inventoryUI.inventorySlotTable))
 
                     //start the player with some money
                     statusUI.goldValue = 20
@@ -84,15 +99,15 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
                     clock.totalTime = (60 * 60 * 12).toFloat() //start at noon
                     profileManager.setProperty("currentTime", clock.totalTime)
                 } else {
-                    val goldVal = profileManager!!.getProperty("currentPlayerGP", Int::class.java)!!
-                    val inventory: Array<InventoryItemLocation> = profileManager.getProperty("playerInventory", Array::class.java)
-                    InventoryUI.Companion.populateInventory(inventoryUI.inventorySlotTable, inventory, inventoryUI.dragAndDrop, InventoryUI.Companion.PLAYER_INVENTORY, false)
-                    val equipInventory: Array<InventoryItemLocation>? = profileManager.getProperty("playerEquipInventory", Array::class.java)
+                    val goldVal = profileManager.getProperty("currentPlayerGP", Int::class.java)!!
+                    val inventory: Array<InventoryItemLocation> = profileManager.getProperty("playerInventory", Array::class.java) as Array<InventoryItemLocation>
+                    InventoryUI.populateInventory(inventoryUI.inventorySlotTable, inventory, inventoryUI.dragAndDrop, InventoryUI.PLAYER_INVENTORY, false)
+                    val equipInventory: Array<InventoryItemLocation>? = profileManager.getProperty("playerEquipInventory", Array::class.java) as Array<InventoryItemLocation>
                     if (equipInventory != null && equipInventory.size > 0) {
                         inventoryUI.resetEquipSlots()
-                        InventoryUI.Companion.populateInventory(inventoryUI.equipSlotTable, equipInventory, inventoryUI.dragAndDrop, InventoryUI.Companion.PLAYER_INVENTORY, false)
+                        InventoryUI.populateInventory(inventoryUI.equipSlotTable, equipInventory, inventoryUI.dragAndDrop, InventoryUI.PLAYER_INVENTORY, false)
                     }
-                    val quests: Array<QuestGraph> = profileManager.getProperty("playerQuests", Array::class.java)
+                    val quests: Array<QuestGraph> = profileManager.getProperty("playerQuests", Array::class.java) as Array<QuestGraph>
                     questUI.quests = quests
                     val xpMaxVal = profileManager.getProperty("currentPlayerXPMax", Int::class.java)!!
                     val xpVal = profileManager.getProperty("currentPlayerXP", Int::class.java)!!
@@ -119,8 +134,8 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
             }
             ProfileObserver.ProfileEvent.SAVING_PROFILE -> {
                 profileManager!!.setProperty("playerQuests", questUI.quests)
-                profileManager.setProperty("playerInventory", InventoryUI.Companion.getInventory(inventoryUI.inventorySlotTable))
-                profileManager.setProperty("playerEquipInventory", InventoryUI.Companion.getInventory(inventoryUI.equipSlotTable))
+                profileManager.setProperty("playerInventory", InventoryUI.getInventory(inventoryUI.inventorySlotTable))
+                profileManager.setProperty("playerEquipInventory", InventoryUI.getInventory(inventoryUI.equipSlotTable))
                 profileManager.setProperty("currentPlayerGP", statusUI.goldValue)
                 profileManager.setProperty("currentPlayerLevel", statusUI.levelValue)
                 profileManager.setProperty("currentPlayerXP", statusUI.xpValue)
@@ -150,48 +165,48 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         }
     }
 
-    override fun onNotify(value: String?, event: ComponentObserver.ComponentEvent?) {
+    override fun onNotify(value: String?, event: ComponentEvent?) {
         when (event) {
-            ComponentObserver.ComponentEvent.LOAD_CONVERSATION -> {
+            ComponentEvent.LOAD_CONVERSATION -> {
                 var config = json.fromJson(EntityConfig::class.java, value)
 
                 //Check to see if there is a version loading into properties
                 if (config.itemTypeID.equals(ItemTypeID.NONE.toString(), ignoreCase = true)) {
-                    val configReturnProperty = ProfileManager.instance!!.getProperty(config.entityID!!, EntityConfig::class.java)
+                    val configReturnProperty = ProfileManager.instance.getProperty(config.entityID!!, EntityConfig::class.java)
                     if (configReturnProperty != null) {
                         config = configReturnProperty
                     }
                 }
                 conversationUI.loadConversation(config)
-                conversationUI.currentConversationGraph.addObserver(this)
+                conversationUI.currentConversationGraph?.addObserver(this)
             }
-            ComponentObserver.ComponentEvent.SHOW_CONVERSATION -> {
+            ComponentEvent.SHOW_CONVERSATION -> {
                 val configShow = json.fromJson(EntityConfig::class.java, value)
                 if (configShow.entityID.equals(conversationUI.currentEntityID, ignoreCase = true)) {
                     conversationUI.isVisible = true
                 }
             }
-            ComponentObserver.ComponentEvent.HIDE_CONVERSATION -> {
+            ComponentEvent.HIDE_CONVERSATION -> {
                 val configHide = json.fromJson(EntityConfig::class.java, value)
                 if (configHide.entityID.equals(conversationUI.currentEntityID, ignoreCase = true)) {
                     conversationUI.isVisible = false
                 }
             }
-            ComponentObserver.ComponentEvent.QUEST_LOCATION_DISCOVERED -> {
-                val string = value!!.split(Component.MESSAGE_TOKEN).toTypedArray()
+            ComponentEvent.QUEST_LOCATION_DISCOVERED -> {
+                val string = value!!.split(MESSAGE_TOKEN).toTypedArray()
                 val questID = string[0]
                 val questTaskID = string[1]
                 questUI.questTaskComplete(questID, questTaskID)
                 updateEntityObservers()
             }
-            ComponentObserver.ComponentEvent.ENEMY_SPAWN_LOCATION_CHANGED -> {
+            ComponentEvent.ENEMY_SPAWN_LOCATION_CHANGED -> {
                 battleUI.battleZoneTriggered(value!!.toInt())
             }
-            ComponentObserver.ComponentEvent.PLAYER_HAS_MOVED -> if (battleUI.isBattleReady) {
+            ComponentEvent.PLAYER_HAS_MOVED -> if (battleUI.isBattleReady) {
                 addTransitionToScreen()
-                setGameState(MainGameScreen.GameState.SAVING)
+                setGameState(GameState.SAVING)
                 mapMgr.disableCurrentmapMusic()
-                notify(AudioObserver.AudioCommand.MUSIC_PLAY_LOOP, AudioObserver.AudioTypeEvent.MUSIC_BATTLE)
+                notify(AudioCommand.MUSIC_PLAY_LOOP, AudioTypeEvent.MUSIC_BATTLE)
                 battleUI.toBack()
                 battleUI.isVisible = true
             }
@@ -203,16 +218,16 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
     override fun onNotify(graph: ConversationGraph?, event: ConversationCommandEvent?) {
         when (event) {
             ConversationCommandEvent.LOAD_STORE_INVENTORY -> {
-                val selectedEntity = mapMgr.currentSelectedMapEntity ?: break
-                val inventory: Array<InventoryItemLocation> = InventoryUI.Companion.getInventory(inventoryUI.inventorySlotTable)
+                val selectedEntityConfig = mapMgr.currentSelectedMapEntityConfig
+                val inventory: Array<InventoryItemLocation> = InventoryUI.getInventory(inventoryUI.inventorySlotTable)
                 storeInventoryUI.loadPlayerInventory(inventory)
-                val items = selectedEntity.entityConfig!!.inventory
+                val items = selectedEntityConfig?.inventory
                 val itemLocations = Array<InventoryItemLocation>()
-                var i = 0
-                while (i < items.size) {
-                    itemLocations.add(InventoryItemLocation(i, items[i].toString(), 1, InventoryUI.Companion.STORE_INVENTORY))
-                    i++
+
+                for(i in 0 until items!!.size ){
+                    itemLocations.add(InventoryItemLocation(i, items[i].toString(), 1, InventoryUI.STORE_INVENTORY))
                 }
+
                 storeInventoryUI.loadStoreInventory(itemLocations)
                 conversationUI.isVisible = false
                 storeInventoryUI.toFront()
@@ -220,52 +235,50 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
             }
             ConversationCommandEvent.EXIT_CONVERSATION -> {
                 conversationUI.isVisible = false
-                mapMgr.clearCurrentSelectedMapEntity()
+                mapMgr.clearCurrentSelectedMapEntityConfig()
             }
             ConversationCommandEvent.ACCEPT_QUEST -> {
-                val currentlySelectedEntity = mapMgr.currentSelectedMapEntity ?: break
-                val config = currentlySelectedEntity.entityConfig
+                val config = mapMgr.currentSelectedMapEntityConfig
                 val questGraph = questUI.loadQuest(config!!.questConfigPath)
                 if (questGraph != null) {
                     //Update conversation dialog
-                    config.conversationConfigPath = QuestUI.Companion.RETURN_QUEST
+                    config.conversationConfigPath = QuestUI.RETURN_QUEST
                     config.currentQuestID = questGraph.questID
-                    ProfileManager.instance!!.setProperty(config.entityID!!, config)
+                    ProfileManager.instance.setProperty(config.entityID!!, config)
                     updateEntityObservers()
                 }
                 conversationUI.isVisible = false
-                mapMgr.clearCurrentSelectedMapEntity()
+                mapMgr.clearCurrentSelectedMapEntityConfig()
             }
             ConversationCommandEvent.RETURN_QUEST -> {
-                val returnEntity = mapMgr.currentSelectedMapEntity ?: break
-                val configReturn = returnEntity.entityConfig
-                val configReturnProperty = ProfileManager.instance!!.getProperty(configReturn!!.entityID!!, EntityConfig::class.java)
+                val configReturn = mapMgr.currentSelectedMapEntityConfig
+                val configReturnProperty = ProfileManager.instance.getProperty(configReturn!!.entityID!!, EntityConfig::class.java)
                         ?: return
                 val questID = configReturnProperty.currentQuestID
                 if (questUI.isQuestReadyForReturn(questID)) {
-                    notify(AudioObserver.AudioCommand.MUSIC_PLAY_ONCE, AudioObserver.AudioTypeEvent.MUSIC_LEVEL_UP_FANFARE)
+                    notify(AudioCommand.MUSIC_PLAY_ONCE, AudioTypeEvent.MUSIC_LEVEL_UP_FANFARE)
                     val quest = questUI.getQuestByID(questID)
                     statusUI.addXPValue(quest!!.xpReward)
                     statusUI.addGoldValue(quest.goldReward)
-                    notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_COIN_RUSTLE)
+                    notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_COIN_RUSTLE)
                     inventoryUI.removeQuestItemFromInventory(questID)
-                    configReturnProperty.conversationConfigPath = QuestUI.Companion.FINISHED_QUEST
-                    ProfileManager.instance!!.setProperty(configReturnProperty.entityID!!, configReturnProperty)
+                    configReturnProperty.conversationConfigPath = QuestUI.FINISHED_QUEST
+                    ProfileManager.instance.setProperty(configReturnProperty.entityID!!, configReturnProperty)
                 }
                 conversationUI.isVisible = false
-                mapMgr.clearCurrentSelectedMapEntity()
+                mapMgr.clearCurrentSelectedMapEntityConfig()
             }
             ConversationCommandEvent.ADD_ENTITY_TO_INVENTORY -> {
-                val entity = mapMgr.currentSelectedMapEntity ?: break
+                val config = mapMgr.currentSelectedMapEntityConfig!!
                 if (inventoryUI.doesInventoryHaveSpace()) {
-                    inventoryUI.addEntityToInventory(entity, entity.entityConfig!!.currentQuestID)
-                    mapMgr.clearCurrentSelectedMapEntity()
+                    inventoryUI.addEntityToInventory(config, config.currentQuestID)
+                    mapMgr.clearCurrentSelectedMapEntityConfig()
                     conversationUI.isVisible = false
-                    entity.unregisterObservers()
-                    mapMgr.removeMapQuestEntity(entity)
+                    //entity.unregisterObservers()
+                    mapMgr.removeMapQuestEntity(config)
                     questUI.updateQuests(mapMgr)
                 } else {
-                    mapMgr.clearCurrentSelectedMapEntity()
+                    mapMgr.clearCurrentSelectedMapEntityConfig()
                     conversationUI.isVisible = false
                     messageBoxUI.isVisible = true
                 }
@@ -277,16 +290,17 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun onNotify(value: String?, event: StoreInventoryEvent?) {
         when (event) {
             StoreInventoryEvent.PLAYER_GP_TOTAL_UPDATED -> {
                 val `val` = Integer.valueOf(value)
                 statusUI.goldValue = `val`
-                notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_COIN_RUSTLE)
+                notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_COIN_RUSTLE)
             }
             StoreInventoryEvent.PLAYER_INVENTORY_UPDATED -> {
-                val items: Array<InventoryItemLocation> = json.fromJson(Array::class.java, value)
-                InventoryUI.Companion.populateInventory(inventoryUI.inventorySlotTable, items, inventoryUI.dragAndDrop, InventoryUI.Companion.PLAYER_INVENTORY, false)
+                val items: Array<InventoryItemLocation> = json.fromJson(Array::class.java, value) as Array<InventoryItemLocation>
+                InventoryUI.populateInventory(inventoryUI.inventorySlotTable, items, inventoryUI.dragAndDrop, InventoryUI.PLAYER_INVENTORY, false)
             }
             else -> {
             }
@@ -297,13 +311,13 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         when (event) {
             StatusEvent.UPDATED_GP -> {
                 storeInventoryUI.setPlayerGP(value)
-                ProfileManager.instance!!.setProperty("currentPlayerGP", statusUI.goldValue)
+                ProfileManager.instance.setProperty("currentPlayerGP", statusUI.goldValue)
             }
-            StatusEvent.UPDATED_HP -> ProfileManager.instance!!.setProperty("currentPlayerHP", statusUI.hpValue)
-            StatusEvent.UPDATED_LEVEL -> ProfileManager.instance!!.setProperty("currentPlayerLevel", statusUI.levelValue)
-            StatusEvent.UPDATED_MP -> ProfileManager.instance!!.setProperty("currentPlayerMP", statusUI.mpValue)
-            StatusEvent.UPDATED_XP -> ProfileManager.instance!!.setProperty("currentPlayerXP", statusUI.xpValue)
-            StatusEvent.LEVELED_UP -> notify(AudioObserver.AudioCommand.MUSIC_PLAY_ONCE, AudioObserver.AudioTypeEvent.MUSIC_LEVEL_UP_FANFARE)
+            StatusEvent.UPDATED_HP -> ProfileManager.instance.setProperty("currentPlayerHP", statusUI.hpValue)
+            StatusEvent.UPDATED_LEVEL -> ProfileManager.instance.setProperty("currentPlayerLevel", statusUI.levelValue)
+            StatusEvent.UPDATED_MP -> ProfileManager.instance.setProperty("currentPlayerMP", statusUI.mpValue)
+            StatusEvent.UPDATED_XP -> ProfileManager.instance.setProperty("currentPlayerXP", statusUI.xpValue)
+            StatusEvent.LEVELED_UP -> notify(AudioCommand.MUSIC_PLAY_ONCE, AudioTypeEvent.MUSIC_LEVEL_UP_FANFARE)
             else -> {
             }
         }
@@ -315,9 +329,9 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
 
     override fun render(delta: Float) {
         if (shakeCam.isCameraShaking) {
-            val shakeCoords = shakeCam.newShakePosition
-            camera.position.x = shakeCoords.x + stage.width / 2
-            camera.position.y = shakeCoords.y + stage.height / 2
+            val shakePosition = shakeCam.newShakePosition
+            camera.position.x = shakePosition.x + stage.width / 2
+            camera.position.y = shakePosition.y + stage.height / 2
         }
         stage.act(delta)
         stage.draw()
@@ -339,43 +353,43 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         stage.dispose()
     }
 
-    override fun onNotify(enemyEntity: Entity?, event: BattleEvent?) {
+    override fun onNotify(enemyEntityConfig: EntityConfig?, event: BattleEvent?) {
         when (event) {
-            BattleEvent.OPPONENT_HIT_DAMAGE -> notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_CREATURE_PAIN)
+            BattleEvent.OPPONENT_HIT_DAMAGE -> notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_CREATURE_PAIN)
             BattleEvent.OPPONENT_DEFEATED -> {
-                setGameState(MainGameScreen.GameState.RUNNING)
-                val goldReward = enemyEntity!!.entityConfig!!.getPropertyValue(EntityConfig.EntityProperties.ENTITY_GP_REWARD.toString()).toInt()
+                setGameState(GameState.RUNNING)
+                val goldReward = enemyEntityConfig!!.getPropertyValue(EntityConfig.EntityProperties.ENTITY_GP_REWARD.toString()).toInt()
                 statusUI.addGoldValue(goldReward)
-                val xpReward = enemyEntity.entityConfig!!.getPropertyValue(EntityConfig.EntityProperties.ENTITY_XP_REWARD.toString()).toInt()
+                val xpReward = enemyEntityConfig.getPropertyValue(EntityConfig.EntityProperties.ENTITY_XP_REWARD.toString()).toInt()
                 statusUI.addXPValue(xpReward)
-                notify(AudioObserver.AudioCommand.MUSIC_STOP, AudioObserver.AudioTypeEvent.MUSIC_BATTLE)
+                notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_BATTLE)
                 mapMgr.enableCurrentmapMusic()
                 addTransitionToScreen()
                 battleUI.isVisible = false
             }
             BattleEvent.PLAYER_RUNNING -> {
-                setGameState(MainGameScreen.GameState.RUNNING)
-                notify(AudioObserver.AudioCommand.MUSIC_STOP, AudioObserver.AudioTypeEvent.MUSIC_BATTLE)
+                setGameState(GameState.RUNNING)
+                notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_BATTLE)
                 mapMgr.enableCurrentmapMusic()
                 addTransitionToScreen()
                 battleUI.isVisible = false
             }
             BattleEvent.PLAYER_HIT_DAMAGE -> {
-                notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_PLAYER_PAIN)
-                val hpVal = ProfileManager.instance!!.getProperty("currentPlayerHP", Int::class.java)!!
+                notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_PLAYER_PAIN)
+                val hpVal = ProfileManager.instance.getProperty("currentPlayerHP", Int::class.java)!!
                 statusUI.hpValue = hpVal
                 shakeCam.startShaking()
                 if (hpVal <= 0) {
                     shakeCam.reset()
-                    notify(AudioObserver.AudioCommand.MUSICSTOP, AudioObserver.AudioTypeEvent.MUSIC_BATTLE)
+                    notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_BATTLE)
                     addTransitionToScreen()
                     battleUI.isVisible = false
-                    setGameState(MainGameScreen.GameState.GAME_OVER)
+                    setGameState(GameState.GAME_OVER)
                 }
             }
             BattleEvent.PLAYER_USED_MAGIC -> {
-                notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_PLAYER_WAND_ATTACK)
-                val mpVal = ProfileManager.instance!!.getProperty("currentPlayerMP", Int::class.java)!!
+                notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_PLAYER_WAND_ATTACK)
+                val mpVal = ProfileManager.instance.getProperty("currentPlayerMP", Int::class.java)!!
                 statusUI.mpValue = mpVal
             }
             else -> {
@@ -386,15 +400,15 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
     override fun onNotify(value: String, event: InventoryEvent?) {
         when (event) {
             InventoryEvent.ITEM_CONSUMED -> {
-                val strings = value.split(Component.MESSAGE_TOKEN).toTypedArray()
+                val strings = value.split(MESSAGE_TOKEN).toTypedArray()
                 if (strings.size != 2) return
                 val type = strings[0].toInt()
                 val typeValue = strings[1].toInt()
                 if (doesRestoreHP(type)) {
-                    notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_EATING)
+                    notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_EATING)
                     statusUI.addHPValue(typeValue)
                 } else if (doesRestoreMP(type)) {
-                    notify(AudioObserver.AudioCommand.SOUND_PLAY_ONCE, AudioObserver.AudioTypeEvent.SOUND_DRINKING)
+                    notify(AudioCommand.SOUND_PLAY_ONCE, AudioTypeEvent.SOUND_DRINKING)
                     statusUI.addMPValue(typeValue)
                 }
             }
@@ -403,11 +417,11 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         }
     }
 
-    override fun addObserver(audioObserver: AudioObserver?) {
+    override fun addObserver(audioObserver: AudioObserver) {
         observers.add(audioObserver)
     }
 
-    override fun removeObserver(audioObserver: AudioObserver?) {
+    override fun removeObserver(audioObserver: AudioObserver) {
         observers.removeValue(audioObserver, true)
     }
 
@@ -415,9 +429,9 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         observers.removeAll(observers, true)
     }
 
-    override fun notify(command: AudioObserver.AudioCommand?, event: AudioObserver.AudioTypeEvent?) {
+    override fun notify(command: AudioCommand, event: AudioTypeEvent) {
         for (observer in observers) {
-            observer!!.onNotify(command, event!!)
+            observer!!.onNotify(command, event)
         }
     }
 
@@ -432,7 +446,7 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         //stage.setDebugAll(true);
         observers = Array()
         transitionActor = ScreenTransitionActor()
-        shakeCam = ShakeCamera(0, 0, 30.0f)
+        shakeCam = ShakeCamera(0f, 0f, 30.0f)
         json = Json()
         messageBoxUI = object : Dialog("Message", Utility.STATUSUI_SKIN, "solidbackground") {
             override fun result(`object`: Any) {
@@ -447,7 +461,7 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
         }
         clock = ClockActor("0", Utility.STATUSUI_SKIN)
         clock.setPosition(stage.width - clock.width, 0f)
-        clock.rateOfTime = 60
+        clock.rateOfTime = 60F
         clock.isVisible = true
         messageBoxUI.isVisible = false
         messageBoxUI.pack()
@@ -503,42 +517,42 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
 
         //add tooltips to the stage
         val actors = inventoryUI.inventoryActors
-        for (actor in actors!!) {
+        for (actor in actors) {
             stage.addActor(actor)
         }
         val storeActors = storeInventoryUI.inventoryActors
-        for (actor in storeActors!!) {
+        for (actor in storeActors) {
             stage.addActor(actor)
         }
         stage.addActor(transitionActor)
         transitionActor.isVisible = false
 
         //Observers
-        player.registerObserver(this)
+        //player.registerObserver(this)
         statusUI.addObserver(this)
         storeInventoryUI.addObserver(this)
         inventoryUI.addObserver(battleUI.currentState)
         inventoryUI.addObserver(this)
-        battleUI.currentState.addObserver(this)
-        addObserver(AudioManager.instance)
+        battleUI.currentState?.addObserver(this)
+        addObserver(AudioManager.instance!!)
 
         //Listeners
         val inventoryButton = statusUI.inventoryButton
-        inventoryButton!!.addListener(object : ClickListener() {
+        inventoryButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                inventoryUI.isVisible = if (inventoryUI.isVisible) false else true
+                inventoryUI.isVisible = !inventoryUI.isVisible
             }
         })
         val questButton = statusUI.questButton
-        questButton!!.addListener(object : ClickListener() {
+        questButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                questUI.isVisible = if (questUI.isVisible) false else true
+                questUI.isVisible = !questUI.isVisible
             }
         })
         conversationUI.closeButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
                 conversationUI.isVisible = false
-                mapMgr.clearCurrentSelectedMapEntity()
+                mapMgr.clearCurrentSelectedMapEntityConfig()
             }
         }
         )
@@ -547,19 +561,19 @@ class PlayerHUD(private val camera: Camera, private val player: Entity, private 
                 storeInventoryUI.savePlayerInventory()
                 storeInventoryUI.cleanupStoreInventory()
                 storeInventoryUI.isVisible = false
-                mapMgr.clearCurrentSelectedMapEntity()
+                mapMgr.clearCurrentSelectedMapEntityConfig()
             }
         }
         )
 
         //Music/Sound loading
-        notify(AudioObserver.AudioCommand.MUSIC_LOAD, AudioObserver.AudioTypeEvent.MUSIC_BATTLE)
-        notify(AudioObserver.AudioCommand.MUSIC_LOAD, AudioObserver.AudioTypeEvent.MUSIC_LEVEL_UP_FANFARE)
-        notify(AudioObserver.AudioCommand.SOUND_LOAD, AudioObserver.AudioTypeEvent.SOUND_COIN_RUSTLE)
-        notify(AudioObserver.AudioCommand.SOUND_LOAD, AudioObserver.AudioTypeEvent.SOUND_CREATURE_PAIN)
-        notify(AudioObserver.AudioCommand.SOUND_LOAD, AudioObserver.AudioTypeEvent.SOUND_PLAYER_PAIN)
-        notify(AudioObserver.AudioCommand.SOUND_LOAD, AudioObserver.AudioTypeEvent.SOUND_PLAYER_WAND_ATTACK)
-        notify(AudioObserver.AudioCommand.SOUND_LOAD, AudioObserver.AudioTypeEvent.SOUND_EATING)
-        notify(AudioObserver.AudioCommand.SOUND_LOAD, AudioObserver.AudioTypeEvent.SOUND_DRINKING)
+        notify(AudioCommand.MUSIC_LOAD, AudioTypeEvent.MUSIC_BATTLE)
+        notify(AudioCommand.MUSIC_LOAD, AudioTypeEvent.MUSIC_LEVEL_UP_FANFARE)
+        notify(AudioCommand.SOUND_LOAD, AudioTypeEvent.SOUND_COIN_RUSTLE)
+        notify(AudioCommand.SOUND_LOAD, AudioTypeEvent.SOUND_CREATURE_PAIN)
+        notify(AudioCommand.SOUND_LOAD, AudioTypeEvent.SOUND_PLAYER_PAIN)
+        notify(AudioCommand.SOUND_LOAD, AudioTypeEvent.SOUND_PLAYER_WAND_ATTACK)
+        notify(AudioCommand.SOUND_LOAD, AudioTypeEvent.SOUND_EATING)
+        notify(AudioCommand.SOUND_LOAD, AudioTypeEvent.SOUND_DRINKING)
     }
 }

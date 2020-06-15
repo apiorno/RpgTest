@@ -1,21 +1,11 @@
 package com.mygdx.game
 
-import AnimationType
 import com.badlogic.ashley.core.Engine
-import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.math.GridPoint2
-import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.utils.Json
-import com.badlogic.gdx.utils.Array
 import com.google.inject.*
 import com.mygdx.game.systems.InputHandlerSystem
-import java.util.*
 
 class MyGdxGame : Game() {
     lateinit var batch: SpriteBatch
@@ -27,14 +17,15 @@ class MyGdxGame : Game() {
     @Override
     override fun create() {
         batch = SpriteBatch()
-        screnManager = ScreenManager(this)
-        setScreenOfType(ScreenManager.ScreenType.MainMenu)
         injector = Guice.createInjector(GameModule(this))
         engine = injector.getInstance(Engine::class.java)
+        injector.getInstance(Systems::class.java).list.map { injector.getInstance(it) }.forEach{ system -> engine.addSystem(system)}
         inputProcessor = injector.getInstance(PlayerInputProcessor::class.java)
         injector.getInstance(Systems::class.java).list.map { injector.getInstance(it) }.forEach{system -> engine.addSystem(system)}
         inputProcessor.add(engine.getSystem(InputHandlerSystem::class.java))
         Gdx.input.inputProcessor = inputProcessor
+        screnManager = ScreenManager(this)
+        setScreenOfType(ScreenManager.ScreenType.MainMenu)
     }
     fun setScreenOfType(screenType : ScreenManager.ScreenType){
         setScreen(screnManager.getScreenType(screenType))

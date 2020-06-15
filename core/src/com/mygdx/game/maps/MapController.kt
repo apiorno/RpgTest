@@ -86,7 +86,7 @@ import java.util.*
         val positions = Array<Vector2>()
         for (`object` in questItemSpawnLayer!!.objects) {
             val name = `object`.name
-            val taskID = `object`.properties["taskID"] as String
+            val taskID = `object`.properties["taskID"] as String?
             if (name == null || taskID == null ||
                     name.isEmpty() || taskID.isEmpty() ||
                     !name.equals(objectName, ignoreCase = true) ||
@@ -130,7 +130,7 @@ import java.util.*
 
     //scale by the unit to convert from map coordinates
     private val nPCStartPositions: Array<Vector2>
-    private get() {
+    get() {
         val npcStartPositions = Array<Vector2>()
         for (`object` in spawnsLayer!!.objects) {
             val objectName = `object`.name

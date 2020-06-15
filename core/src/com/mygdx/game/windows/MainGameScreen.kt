@@ -1,21 +1,21 @@
 package com.mygdx.game.windows
 
-import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.maps.tiled.TiledMapImageLayer
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.utils.Json
+import com.mygdx.game.EntityConfig
 import com.mygdx.game.MyGdxGame
 import com.mygdx.game.ScreenManager.*
+import com.mygdx.game.Systems
 import com.mygdx.game.maps.MapManager
 import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.temporal.EntityFactory
+import com.mygdx.game.widgets.PlayerHUD
 
-open class MainGameScreen  (private val game: MyGdxGame) :Screen {
+open class MainGameScreen  (private val game: MyGdxGame) : GameScreen() {
     object VIEWPORT {
         var viewportWidth = 0f
         var viewportHeight = 0f
@@ -29,14 +29,14 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
     enum class GameState {
         SAVING, LOADING, RUNNING, PAUSED, GAME_OVER
     }
-    protected var mapMgr: MapManager
+    protected var mapMgr: MapManager = MapManager()
 
     protected var hudCamera: OrthographicCamera? = null
-    private val json: Json
+    private val json: Json = Json()
     private val multiplexer: InputMultiplexer
     private val playerHUD: PlayerHUD
-    private val camera : OrthographicCamera
-    private val player: Entity
+    val camera : OrthographicCamera
+    private val playerConfig: EntityConfig
 
     companion object {
         private val TAG = MainGameScreen::class.java.simpleName
@@ -65,8 +65,6 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
     }
 
     init {
-        mapMgr = MapManager()
-        json = Json()
         setGameState(GameState.RUNNING)
 
         //_camera setup
@@ -75,32 +73,67 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
         //get the current size
         camera = game.injector.getInstance(OrthographicCamera::class.java)
         camera.setToOrtho(false, VIEWPORT.viewportWidth, VIEWPORT.viewportHeight)
-        player = EntityFactory.instance!!.getPlayer()!!
-        mapMgr.player = player
+        playerConfig = EntityFactory.instance!!.getEntityConfigByName(EntityFactory.EntityName.PLAYER_PUPPET)
+        mapMgr.playerConfig = playerConfig
         mapMgr.camera = camera
         hudCamera = OrthographicCamera()
         hudCamera!!.setToOrtho(false, VIEWPORT.physicalWidth, VIEWPORT.physicalHeight)
-        playerHUD = PlayerHUD(hudCamera, player, mapMgr)
+        playerHUD = PlayerHUD(hudCamera!!, playerConfig, mapMgr)
         multiplexer = InputMultiplexer()
         multiplexer.addProcessor(playerHUD.stage)
         multiplexer.addProcessor(game.inputProcessor)
         Gdx.input.inputProcessor = multiplexer
     }
 
+    private fun setupViewport(width: Int, height: Int) {
+        //Make the viewport a percentage of the total display area
+        VIEWPORT.virtualWidth = width.toFloat()
+        VIEWPORT.virtualHeight = height.toFloat()
+
+        //Current viewport dimensions
+        VIEWPORT.viewportWidth = VIEWPORT.virtualWidth
+        VIEWPORT.viewportHeight = VIEWPORT.virtualHeight
+
+        //pixel dimensions of display
+        VIEWPORT.physicalWidth = Gdx.graphics.width.toFloat()
+        VIEWPORT.physicalHeight = Gdx.graphics.height.toFloat()
+
+        //aspect ratio for current viewport
+        VIEWPORT.aspectRatio = VIEWPORT.virtualWidth / VIEWPORT.virtualHeight
+
+        //update viewport if there could be skewing
+        if (VIEWPORT.physicalWidth / VIEWPORT.physicalHeight >= VIEWPORT.aspectRatio) {
+            //Letterbox left and right
+            VIEWPORT.viewportWidth = VIEWPORT.viewportHeight * (VIEWPORT.physicalWidth / VIEWPORT.physicalHeight)
+            VIEWPORT.viewportHeight = VIEWPORT.virtualHeight
+        } else {
+            //letterbox above and below
+            VIEWPORT.viewportWidth = VIEWPORT.virtualWidth
+            VIEWPORT.viewportHeight = VIEWPORT.viewportWidth * (VIEWPORT.physicalHeight / VIEWPORT.physicalWidth)
+        }
+        Gdx.app.debug(TAG, "WorldRenderer: virtual: (" + VIEWPORT.virtualWidth + "," + VIEWPORT.virtualHeight + ")")
+        Gdx.app.debug(TAG, "WorldRenderer: viewport: (" + VIEWPORT.viewportWidth + "," + VIEWPORT.viewportHeight + ")")
+        Gdx.app.debug(TAG, "WorldRenderer: physical: (" + VIEWPORT.physicalWidth + "," + VIEWPORT.physicalHeight + ")")
+    }
+
     override fun hide() {
-        TODO("Not yet implemented")
     }
 
     override fun show() {
 
+        createEntities()
+    }
+
+    private fun createEntities() {
+        game.engine.addEntity(EntityFactory.instance?.getPlayer())
     }
 
     override fun render(delta: Float) {
-        if (gameState == GameState.GAME_OVER) {
+        /*if (gameState == GameState.GAME_OVER) {
             game.setScreenOfType(ScreenType.GameOver)
         }
         if (gameState == GameState.PAUSED) {
-            player.updateInput(delta)
+            //playerConfig.updateInput(delta)
             playerHUD.render(delta)
             return
         }
@@ -116,23 +149,20 @@ open class MainGameScreen  (private val game: MyGdxGame) :Screen {
             mapMgr.setMapChanged(false)
             playerHUD.addTransitionToScreen()
         }
-        mapMgr.renderMap()
+        mapMgr.renderMap()*/
+        game.engine.update(delta)
         playerHUD.render(delta)
     }
 
     override fun pause() {
-        TODO("Not yet implemented")
     }
 
     override fun resume() {
-        TODO("Not yet implemented")
     }
 
     override fun resize(width: Int, height: Int) {
-        TODO("Not yet implemented")
     }
 
     override fun dispose() {
-        TODO("Not yet implemented")
     }
 }

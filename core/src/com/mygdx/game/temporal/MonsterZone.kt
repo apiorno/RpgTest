@@ -12,6 +12,7 @@ class MonsterZone {
     var monsters: Array<MonsterEntityType>? = null
 
     companion object {
+        @Suppress("UNCHECKED_CAST")
         fun getMonsterZones(configFilePath: String?): Hashtable<String?, Array<MonsterEntityType>?> {
             val json = Json()
             val monsterZones = Hashtable<String?, Array<MonsterEntityType>?>()

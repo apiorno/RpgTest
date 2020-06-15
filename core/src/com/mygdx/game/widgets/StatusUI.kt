@@ -22,12 +22,12 @@ class StatusUI : Window("stats", Utility.STATUSUI_SKIN), StatusSubject {
     //Attributes
     private var levelVal = -1
     private var goldVal = -1
-    private var hpVal = -1
-    private var mpVal = -1
-    private var xpVal = 0
-    var xPValueMax = -1
-    var hPValueMax = -1
-    var mPValueMax = -1
+    var hpValue = -1
+    var mpValue = -1
+    var xpValue = 0
+    var xpValueMax = -1
+    var hpValueMax = -1
+    var mpValueMax = -1
     private val hpValLabel: Label
     private val mpValLabel: Label
     private val xpValLabel: Label
@@ -59,35 +59,35 @@ class StatusUI : Window("stats", Utility.STATUSUI_SKIN), StatusSubject {
     }
 
     var xPValue: Int
-        get() = xpVal
+        get() = xpValue
         set(xpValue) {
-            xpVal = xpValue
-            if (xpVal > xPValueMax) {
+            this.xpValue = xpValue
+            if (this.xpValue > xpValueMax) {
                 updateToNewLevel()
             }
-            xpValLabel.setText(xpVal.toString())
-            updateBar(xpBar, xpVal, xPValueMax)
-            notify(xpVal, StatusEvent.UPDATED_XP)
+            xpValLabel.setText(this.xpValue.toString())
+            updateBar(xpBar, this.xpValue, xpValueMax)
+            notify(this.xpValue, StatusEvent.UPDATED_XP)
         }
 
     fun addXPValue(xpValue: Int) {
-        xpVal += xpValue
-        if (xpVal > xPValueMax) {
+        this.xpValue += xpValue
+        if (this.xpValue > xpValueMax) {
             updateToNewLevel()
         }
-        xpValLabel.setText(xpVal.toString())
-        updateBar(xpBar, xpVal, xPValueMax)
-        notify(xpVal, StatusEvent.UPDATED_XP)
+        xpValLabel.setText(this.xpValue.toString())
+        updateBar(xpBar, this.xpValue, xpValueMax)
+        notify(this.xpValue, StatusEvent.UPDATED_XP)
     }
 
     fun setStatusForLevel(level: Int) {
         for (table in levelTables) {
             if (table.levelID!!.toInt() == level) {
-                xPValueMax = table.xpMax
+                xpValueMax = table.xpMax
                 xPValue = 0
-                hPValueMax = table.hpMax
+                hpValueMax = table.hpMax
                 hPValue = table.hpMax
-                mPValueMax = table.mpMax
+                mpValueMax = table.mpMax
                 mPValue = table.mpMax
                 levelValue = table.levelID!!.toInt()
                 return
@@ -98,13 +98,13 @@ class StatusUI : Window("stats", Utility.STATUSUI_SKIN), StatusSubject {
     fun updateToNewLevel() {
         for (table in levelTables) {
             //System.out.println("XPVAL " + xpVal + " table XPMAX " + table.getXpMax() );
-            if (xpVal > table.xpMax) {
+            if (xpValue > table.xpMax) {
                 continue
             } else {
-                xPValueMax = table.xpMax
-                hPValueMax = table.hpMax
+                xpValueMax = table.xpMax
+                hpValueMax = table.hpMax
                 hPValue = table.hpMax
-                mPValueMax = table.mpMax
+                mpValueMax = table.mpMax
                 mPValue = table.mpMax
                 levelValue = table.levelID!!.toInt()
                 notify(levelVal, StatusEvent.LEVELED_UP)
@@ -115,50 +115,50 @@ class StatusUI : Window("stats", Utility.STATUSUI_SKIN), StatusSubject {
 
     //HP
     var hPValue: Int
-        get() = hpVal
+        get() = hpValue
         set(hpValue) {
-            hpVal = hpValue
-            hpValLabel.setText(hpVal.toString())
-            updateBar(hpBar, hpVal, hPValueMax)
-            notify(hpVal, StatusEvent.UPDATED_HP)
+            this.hpValue = hpValue
+            hpValLabel.setText(this.hpValue.toString())
+            updateBar(hpBar, this.hpValue, hpValueMax)
+            notify(this.hpValue, StatusEvent.UPDATED_HP)
         }
 
     fun removeHPValue(hpValue: Int) {
-        hpVal = MathUtils.clamp(hpVal - hpValue, 0, hPValueMax)
-        hpValLabel.setText(hpVal.toString())
-        updateBar(hpBar, hpVal, hPValueMax)
-        notify(hpVal, StatusEvent.UPDATED_HP)
+        this.hpValue = MathUtils.clamp(this.hpValue - hpValue, 0, hpValueMax)
+        hpValLabel.setText(this.hpValue.toString())
+        updateBar(hpBar, this.hpValue, hpValueMax)
+        notify(this.hpValue, StatusEvent.UPDATED_HP)
     }
 
     fun addHPValue(hpValue: Int) {
-        hpVal = MathUtils.clamp(hpVal + hpValue, 0, hPValueMax)
-        hpValLabel.setText(hpVal.toString())
-        updateBar(hpBar, hpVal, hPValueMax)
-        notify(hpVal, StatusEvent.UPDATED_HP)
+        this.hpValue = MathUtils.clamp(this.hpValue + hpValue, 0, hpValueMax)
+        hpValLabel.setText(this.hpValue.toString())
+        updateBar(hpBar, this.hpValue, hpValueMax)
+        notify(this.hpValue, StatusEvent.UPDATED_HP)
     }
 
     //MP
     var mPValue: Int
-        get() = mpVal
+        get() = mpValue
         set(mpValue) {
-            mpVal = mpValue
-            mpValLabel.setText(mpVal.toString())
-            updateBar(mpBar, mpVal, mPValueMax)
-            notify(mpVal, StatusEvent.UPDATED_MP)
+            this.mpValue = mpValue
+            mpValLabel.setText(this.mpValue.toString())
+            updateBar(mpBar, this.mpValue, mpValueMax)
+            notify(this.mpValue, StatusEvent.UPDATED_MP)
         }
 
     fun removeMPValue(mpValue: Int) {
-        mpVal = MathUtils.clamp(mpVal - mpValue, 0, mPValueMax)
-        mpValLabel.setText(mpVal.toString())
-        updateBar(mpBar, mpVal, mPValueMax)
-        notify(mpVal, StatusEvent.UPDATED_MP)
+        this.mpValue = MathUtils.clamp(this.mpValue - mpValue, 0, mpValueMax)
+        mpValLabel.setText(this.mpValue.toString())
+        updateBar(mpBar, this.mpValue, mpValueMax)
+        notify(this.mpValue, StatusEvent.UPDATED_MP)
     }
 
     fun addMPValue(mpValue: Int) {
-        mpVal = MathUtils.clamp(mpVal + mpValue, 0, mPValueMax)
-        mpValLabel.setText(mpVal.toString())
-        updateBar(mpBar, mpVal, mPValueMax)
-        notify(mpVal, StatusEvent.UPDATED_MP)
+        this.mpValue = MathUtils.clamp(this.mpValue + mpValue, 0, mpValueMax)
+        mpValLabel.setText(this.mpValue.toString())
+        updateBar(mpBar, this.mpValue, mpValueMax)
+        notify(this.mpValue, StatusEvent.UPDATED_MP)
     }
 
     fun updateBar(bar: Image, currentVal: Int, maxVal: Int) {
@@ -214,11 +214,11 @@ class StatusUI : Window("stats", Utility.STATUSUI_SKIN), StatusSubject {
 
         //labels
         val hpLabel = Label(" hp: ", Utility.STATUSUI_SKIN)
-        hpValLabel = Label(hpVal.toString(), Utility.STATUSUI_SKIN)
+        hpValLabel = Label(hpValue.toString(), Utility.STATUSUI_SKIN)
         val mpLabel = Label(" mp: ", Utility.STATUSUI_SKIN)
-        mpValLabel = Label(mpVal.toString(), Utility.STATUSUI_SKIN)
+        mpValLabel = Label(mpValue.toString(), Utility.STATUSUI_SKIN)
         val xpLabel = Label(" xp: ", Utility.STATUSUI_SKIN)
-        xpValLabel = Label(xpVal.toString(), Utility.STATUSUI_SKIN)
+        xpValLabel = Label(xpValue.toString(), Utility.STATUSUI_SKIN)
         val levelLabel = Label(" lv: ", Utility.STATUSUI_SKIN)
         levelValLabel = Label(levelVal.toString(), Utility.STATUSUI_SKIN)
         val goldLabel = Label(" gp: ", Utility.STATUSUI_SKIN)

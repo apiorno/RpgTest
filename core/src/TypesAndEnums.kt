@@ -59,6 +59,7 @@ const val UNIT_SCALE = 1 / 16f
     }
 
 
+    @Suppress("UNCHECKED_CAST")
     fun getEntityConfigs(configFilePath: String?): Array<EntityConfig> {
         val json = Json()
         val configs = Array<EntityConfig>()

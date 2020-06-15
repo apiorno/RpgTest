@@ -3,7 +3,6 @@ package com.mygdx.game.windows
 import UNIT_SCALE
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.Interpolation
 import com.badlogic.gdx.scenes.scene2d.Action
 import com.badlogic.gdx.scenes.scene2d.Actor
@@ -19,6 +18,7 @@ import com.mygdx.game.MyGdxGame
 import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioObserver
+import com.mygdx.game.maps.MapFactory
 import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.sfx.ScreenTransitionAction.*
 import com.mygdx.game.sfx.ScreenTransitionAction.Companion.transition
@@ -32,8 +32,8 @@ import com.mygdx.game.widgets.AnimatedImage
 class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
     private val stage: Stage
     private val viewport: Viewport
-    private val UIStage: Stage
-    private val UIViewport: Viewport
+    private val uiStage: Stage
+    private val uiViewport: Viewport
     private var followingActor: Actor
     private val messageBoxUI: Dialog
     private val label: Label
@@ -52,7 +52,7 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
     private val animFire: AnimatedImage
     private val animDemon: AnimatedImage
     private val cutsceneAction: Action
-        private get() {
+        get() {
             setupScene01.reset()
             setupScene02.reset()
             setupScene03.reset()
@@ -146,11 +146,11 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
     }
 
     fun setCameraPosition(x: Float, y: Float) {
-        camera!!.position[x, y] = 0f
+        camera.position[x, y] = 0f
         isCameraFixed = true
     }
 
-    fun showMessage(message: String?) {
+    private fun showMessage(message: String?) {
         label.setText(message)
         messageBoxUI.pack()
         messageBoxUI.isVisible = true
@@ -163,20 +163,20 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        mapRenderer!!.setView(camera)
-        mapRenderer!!.batch.enableBlending()
-        mapRenderer!!.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        mapMgr.preRenderMap()
+
+
         if (mapMgr.hasMapChanged()) {
-            mapRenderer!!.map = mapMgr.currentTiledMap
+            mapMgr.changeRendererMap()
             mapMgr.setMapChanged(false)
         }
-        mapRenderer!!.render()
+        mapMgr.renderMap()
         if (!isCameraFixed) {
-            camera!!.position[followingActor.x, followingActor.y] = 0f
+            camera.position[followingActor.x, followingActor.y] = 0f
         }
-        camera!!.update()
-        UIStage.act(delta)
-        UIStage.draw()
+        camera.update()
+        uiStage.act(delta)
+        uiStage.draw()
         stage.act(delta)
         stage.draw()
     }
@@ -187,9 +187,6 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
         notify(AudioObserver.AudioCommand.MUSIC_STOP_ALL, AudioObserver.AudioTypeEvent.NONE)
         notify(AudioObserver.AudioCommand.MUSIC_PLAY_LOOP, AudioObserver.AudioTypeEvent.MUSIC_INTRO_CUTSCENE)
         ProfileManager.instance.removeAllObservers()
-        if (mapRenderer == null) {
-            mapRenderer = OrthogonalTiledMapRenderer(mapMgr.currentTiledMap, UNIT_SCALE)
-        }
     }
 
     override fun hide() {
@@ -201,8 +198,8 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
     init {
         viewport = ScreenViewport(camera)
         stage = Stage(viewport)
-        UIViewport = ScreenViewport(hudCamera)
-        UIStage = Stage(UIViewport)
+        uiViewport = ScreenViewport(hudCamera)
+        uiStage = Stage(uiViewport)
         label = Label("Test", Utility.STATUSUI_SKIN)
         label.setWrap(true)
         messageBoxUI = Dialog("", Utility.STATUSUI_SKIN, "solidbackground")
@@ -300,6 +297,6 @@ class CutSceneScreen(private val game: MyGdxGame) : MainGameScreen(game) {
         stage.addActor(animFire)
         stage.addActor(animDemon)
         stage.addActor(transitionActor)
-        UIStage.addActor(messageBoxUI)
+        uiStage.addActor(messageBoxUI)
     }
 }

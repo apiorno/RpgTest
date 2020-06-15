@@ -100,7 +100,7 @@ class QuestGraph {
     }
 
     fun doesQuestTaskHaveDependencies(id: String?): Boolean {
-        val task = getQuestTaskByID(id) ?: return false
+        getQuestTaskByID(id) ?: return false
         val list = questTaskDependencies!![id]!!
         return !(list.isEmpty() || list.size == 0)
     }

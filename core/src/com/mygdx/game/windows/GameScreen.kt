@@ -4,6 +4,7 @@ import com.badlogic.gdx.Screen
 import com.badlogic.gdx.utils.Array
 import com.mygdx.game.audio.AudioManager
 import com.mygdx.game.audio.AudioObserver
+import com.mygdx.game.audio.AudioObserver.*
 import com.mygdx.game.audio.AudioSubject
 
 open class GameScreen : Screen, AudioSubject {
@@ -25,7 +26,7 @@ open class GameScreen : Screen, AudioSubject {
         observers.removeAll(observers, true)
     }
 
-    override fun notify(command: AudioObserver.AudioCommand, event: AudioObserver.AudioTypeEvent) {
+    override fun notify(command: AudioCommand, event: AudioTypeEvent) {
         observers.forEach { it.onNotify(command, event)  }
     }
 

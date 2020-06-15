@@ -13,6 +13,7 @@ class LevelTable {
     var mpMax = 0
 
     companion object {
+        @Suppress("UNCHECKED_CAST")
         @JvmStatic
         fun getLevelTables(configFilePath: String?): Array<LevelTable> {
             val json = Json()

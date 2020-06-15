@@ -21,7 +21,7 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
     private val listTasks: List<QuestTask>
 
     private val json = Json()
-    private var quests: Array<QuestGraph> = Array()
+    var quests: Array<QuestGraph> = Array()
         set(quests) {
             this@QuestUI.quests = quests
             updateQuestItemList()
