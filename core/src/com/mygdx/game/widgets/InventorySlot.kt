@@ -7,32 +7,29 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Stack
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Array
+import com.mygdx.game.widgets.InventorySlotObserver.SlotEvent
 import com.mygdx.game.Utility
-import com.mygdx.game.temporal.InventorySlotObserver
-import com.mygdx.game.temporal.InventorySlotObserver.*
-import com.mygdx.game.temporal.InventorySlotSubject
-
 
 class InventorySlot() : Stack(), InventorySlotSubject {
     //All slots have this default image
-    private val defaultBackground: Stack = Stack()
-    private var customBackgroundDecal: Image
-    private val numItemsLabel: Label?
-    private var numItemsVal = 0
-    private var filterItemType = 0
-    private val observers: Array<InventorySlotObserver>
+    private val _defaultBackground: Stack
+    private var _customBackgroundDecal: Image
+    private val _numItemsLabel: Label?
+    private var _numItemsVal = 0
+    private var _filterItemType = 0
+    private val _observers: Array<InventorySlotObserver>
 
     constructor(filterItemType: Int, customBackgroundDecal: Image) : this() {
-        this.filterItemType = filterItemType
-        this.customBackgroundDecal = customBackgroundDecal
-        defaultBackground.add(customBackgroundDecal)
+        _filterItemType = filterItemType
+        _customBackgroundDecal = customBackgroundDecal
+        _defaultBackground.add(_customBackgroundDecal)
     }
 
     fun decrementItemCount(sendRemoveNotification: Boolean) {
-        numItemsVal.dec()
-        numItemsLabel!!.setText(numItemsVal.toString())
-        if (defaultBackground.children.size == 1) {
-            defaultBackground.add(customBackgroundDecal)
+        _numItemsVal--
+        _numItemsLabel!!.setText(_numItemsVal.toString())
+        if (_defaultBackground.children.size == 1) {
+            _defaultBackground.add(_customBackgroundDecal)
         }
         checkVisibilityOfItemCount()
         if (sendRemoveNotification) {
@@ -40,11 +37,11 @@ class InventorySlot() : Stack(), InventorySlotSubject {
         }
     }
 
-    private fun incrementItemCount(sendAddNotification: Boolean) {
-        numItemsVal++
-        numItemsLabel!!.setText(numItemsVal.toString())
-        if (defaultBackground.children.size > 1) {
-            defaultBackground.children.pop()
+    fun incrementItemCount(sendAddNotification: Boolean) {
+        _numItemsVal++
+        _numItemsLabel!!.setText(_numItemsVal.toString())
+        if (_defaultBackground.children.size > 1) {
+            _defaultBackground.children.pop()
         }
         checkVisibilityOfItemCount()
         if (sendAddNotification) {
@@ -54,20 +51,20 @@ class InventorySlot() : Stack(), InventorySlotSubject {
 
     override fun add(actor: Actor) {
         super.add(actor)
-        if (numItemsLabel == null) {
+        if (_numItemsLabel == null) {
             return
         }
-        if (actor != defaultBackground && actor != numItemsLabel) {
+        if (actor != _defaultBackground && actor != _numItemsLabel) {
             incrementItemCount(true)
         }
     }
 
     fun remove(actor: Actor?) {
         super.removeActor(actor)
-        if (numItemsLabel == null) {
+        if (_numItemsLabel == null) {
             return
         }
-        if (actor != defaultBackground && actor != numItemsLabel) {
+        if (actor != _defaultBackground && actor != _numItemsLabel) {
             decrementItemCount(true)
         }
     }
@@ -75,10 +72,10 @@ class InventorySlot() : Stack(), InventorySlotSubject {
     fun add(array: Array<Actor>) {
         for (actor in array) {
             super.add(actor)
-            if (numItemsLabel == null) {
+            if (_numItemsLabel == null) {
                 return
             }
-            if (actor != defaultBackground && actor != numItemsLabel) {
+            if (actor != _defaultBackground && actor != _numItemsLabel) {
                 incrementItemCount(true)
             }
         }
@@ -134,7 +131,11 @@ class InventorySlot() : Stack(), InventorySlotSubject {
     }
 
     private fun checkVisibilityOfItemCount() {
-        numItemsLabel!!.isVisible = numItemsVal >= 2
+        if (_numItemsVal < 2) {
+            _numItemsLabel!!.isVisible = false
+        } else {
+            _numItemsLabel!!.isVisible = true
+        }
     }
 
     fun hasItem(): Boolean {
@@ -171,10 +172,10 @@ class InventorySlot() : Stack(), InventorySlotSubject {
     }
 
     fun doesAcceptItemUseType(itemUseType: Int): Boolean {
-        return if (filterItemType == 0) {
+        return if (_filterItemType == 0) {
             true
         } else {
-            filterItemType and itemUseType == itemUseType
+            _filterItemType and itemUseType == itemUseType
         }
     }
 
@@ -191,21 +192,21 @@ class InventorySlot() : Stack(), InventorySlotSubject {
         }
 
     override fun addObserver(inventorySlotObserver: InventorySlotObserver) {
-        observers.add(inventorySlotObserver)
+        _observers.add(inventorySlotObserver)
     }
 
     override fun removeObserver(inventorySlotObserver: InventorySlotObserver) {
-        observers.removeValue(inventorySlotObserver, true)
+        _observers.removeValue(inventorySlotObserver, true)
     }
 
     override fun removeAllObservers() {
-        for (observer in observers) {
-            observers.removeValue(observer, true)
+        for (observer in _observers) {
+            _observers.removeValue(observer, true)
         }
     }
 
-    override fun notify(slot: InventorySlot, event: SlotEvent?) {
-        for (observer in observers) {
+    override fun notify(slot: InventorySlot, event: SlotEvent) {
+        for (observer in _observers) {
             observer.onNotify(slot, event)
         }
     }
@@ -229,16 +230,17 @@ class InventorySlot() : Stack(), InventorySlotSubject {
 
     init {
         //filter nothing
-        customBackgroundDecal = Image()
-        observers = Array()
+        _defaultBackground = Stack()
+        _customBackgroundDecal = Image()
+        _observers = Array()
         val image = Image(NinePatch(Utility.STATUSUI_TEXTUREATLAS.createPatch("dialog")))
-        numItemsLabel = Label(numItemsVal.toString(), Utility.STATUSUI_SKIN, "inventory-item-count")
-        numItemsLabel.setAlignment(Align.bottomRight)
-        numItemsLabel.isVisible = false
-        defaultBackground.add(image)
-        defaultBackground.name = "background"
-        numItemsLabel.name = "numitems"
-        this.add(defaultBackground)
-        this.add(numItemsLabel)
+        _numItemsLabel = Label(_numItemsVal.toString(), Utility.STATUSUI_SKIN, "inventory-item-count")
+        _numItemsLabel.setAlignment(Align.bottomRight)
+        _numItemsLabel.isVisible = false
+        _defaultBackground.add(image)
+        _defaultBackground.name = "background"
+        _numItemsLabel.name = "numitems"
+        this.add(_defaultBackground)
+        this.add(_numItemsLabel)
     }
 }

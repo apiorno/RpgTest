@@ -4,43 +4,43 @@ import java.util.*
 
 object MapFactory {
     //All maps for the game
-    private val mapTable = Hashtable<MapType, MapController>()
-    fun getMap(mapType: MapType?): MapController? {
-        var mapController: MapController? = null
+    private val _mapTable = Hashtable<MapType, Map>()
+    fun getMap(mapType: MapType?): Map? {
+        var map: Map? = null
         when (mapType) {
             MapType.TOP_WORLD -> {
-                mapController = mapTable[MapType.TOP_WORLD]
-                if (mapController == null) {
-                    mapController = MapController(TopWorldMapContentController())
-                    mapTable[MapType.TOP_WORLD] = mapController
+                map = _mapTable[MapType.TOP_WORLD]
+                if (map == null) {
+                    map = TopWorldMap()
+                    _mapTable[MapType.TOP_WORLD] = map
                 }
             }
             MapType.TOWN -> {
-                mapController = mapTable[MapType.TOWN]
-                if (mapController == null) {
-                    mapController = MapController(TownMapContentController())
-                    mapTable[MapType.TOWN] = mapController
+                map = _mapTable[MapType.TOWN]
+                if (map == null) {
+                    map = TownMap()
+                    _mapTable[MapType.TOWN] = map
                 }
             }
             MapType.CASTLE_OF_DOOM -> {
-                mapController = mapTable[MapType.CASTLE_OF_DOOM]
-                if (mapController == null) {
-                    mapController = MapController(CastleDoomMapContentController())
-                    mapTable[MapType.CASTLE_OF_DOOM] = mapController
+                map = _mapTable[MapType.CASTLE_OF_DOOM]
+                if (map == null) {
+                    map = CastleDoomMap()
+                    _mapTable[MapType.CASTLE_OF_DOOM] = map
                 }
             }
             else -> {
             }
         }
-        return mapController
+        return map
     }
 
     @kotlin.jvm.JvmStatic
     fun clearCache() {
-        for (map in mapTable.values) {
+        for (map in _mapTable.values) {
             map.dispose()
         }
-        mapTable.clear()
+        _mapTable.clear()
     }
 
     enum class MapType {

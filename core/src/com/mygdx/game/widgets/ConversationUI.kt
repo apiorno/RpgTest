@@ -2,29 +2,25 @@ package com.mygdx.game.widgets
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.InputEvent
-import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.ui.List
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton
-import com.badlogic.gdx.scenes.scene2d.ui.Window
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
-import com.mygdx.game.EntityConfig
+import com.mygdx.game.ecs.EntityConfig
 import com.mygdx.game.Utility
 import com.mygdx.game.dialog.ConversationChoice
 import com.mygdx.game.dialog.ConversationGraph
 
 class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground") {
-    private val dialogText: Label
-    private val listItems: List<ConversationChoice>
+    private val _dialogText: Label
+    private val _listItems: List<ConversationChoice>
     var currentConversationGraph: ConversationGraph?
         private set
     var currentEntityID: String? = null
         private set
     val closeButton: TextButton
-    private val json: Json = Json()
+    private val _json: Json
 
     fun loadConversation(entityConfig: EntityConfig) {
         val fullFilenamePath = entityConfig.conversationConfigPath
@@ -36,30 +32,29 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
         }
         currentEntityID = entityConfig.entityID
         titleLabel.setText(entityConfig.entityID)
-        val graph = json.fromJson(ConversationGraph::class.java, Gdx.files.internal(fullFilenamePath))
+        val graph = _json.fromJson(ConversationGraph::class.java, Gdx.files.internal(fullFilenamePath))
         setConversationGraph(graph)
     }
 
-    private fun setConversationGraph(graph: ConversationGraph?) {
+    fun setConversationGraph(graph: ConversationGraph?) {
         if (currentConversationGraph != null) currentConversationGraph!!.removeAllObservers()
         currentConversationGraph = graph
         populateConversationDialog(currentConversationGraph!!.currentConversationID)
     }
 
-    @Suppress("CAST_NEVER_SUCCEEDS")
     private fun populateConversationDialog(conversationID: String?) {
         clearDialog()
         val conversation = currentConversationGraph!!.getConversationByID(conversationID) ?: return
         currentConversationGraph!!.setCurrentConversation(conversationID)
-        dialogText.setText(conversation.dialog)
-        val choices = currentConversationGraph!!.currentChoices as Array<ConversationChoice>
-        listItems.setItems(choices)
-        listItems.selectedIndex = -1
+        _dialogText.setText(conversation.dialog)
+        val choices = currentConversationGraph!!.currentChoices
+        _listItems.setItems(*choices.toTypedArray())
+        _listItems.selectedIndex = -1
     }
 
     private fun clearDialog() {
-        dialogText.setText("")
-        listItems.clearItems()
+        _dialogText.setText("")
+        _listItems.clearItems()
     }
 
     companion object {
@@ -67,17 +62,18 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
     }
 
     init {
+        _json = Json()
         currentConversationGraph = ConversationGraph()
 
         //create
-        dialogText = Label("No Conversation", Utility.STATUSUI_SKIN)
-        dialogText.setWrap(true)
-        dialogText.setAlignment(Align.center)
-        listItems = List<ConversationChoice>(Utility.STATUSUI_SKIN)
+        _dialogText = Label("No Conversation", Utility.STATUSUI_SKIN)
+        _dialogText.setWrap(true)
+        _dialogText.setAlignment(Align.center)
+        _listItems = List<ConversationChoice>(Utility.STATUSUI_SKIN)
         closeButton = TextButton("X", Utility.STATUSUI_SKIN)
-        val scrollPane = ScrollPane(listItems, Utility.STATUSUI_SKIN, "inventoryPane")
+        val scrollPane = ScrollPane(_listItems, Utility.STATUSUI_SKIN, "inventoryPane")
         scrollPane.setOverscroll(false, false)
-        scrollPane.fadeScrollBars = false
+        scrollPane.setFadeScrollBars(false)
         scrollPane.setScrollingDisabled(true, false)
         scrollPane.setForceScroll(true, false)
         scrollPane.setScrollBarPositions(false, true)
@@ -87,7 +83,7 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
         this.add(closeButton)
         row()
         defaults().expand().fill()
-        this.add(dialogText).pad(10f, 10f, 10f, 10f)
+        this.add(_dialogText).pad(10f, 10f, 10f, 10f)
         row()
         this.add(scrollPane).pad(10f, 10f, 10f, 10f)
 
@@ -95,10 +91,10 @@ class ConversationUI : Window("dialog", Utility.STATUSUI_SKIN, "solidbackground"
         pack()
 
         //Listeners
-        listItems.addListener(object : ClickListener() {
+        _listItems.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                val choice = listItems.selected as ConversationChoice
-                currentConversationGraph!!.notify(currentConversationGraph, choice.conversationCommandEvent)
+                val choice = _listItems.selected as ConversationChoice
+                currentConversationGraph!!.notify(currentConversationGraph!!, choice.conversationCommandEvent!!)
                 populateConversationDialog(choice.destinationId)
             }
         }

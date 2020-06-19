@@ -64,14 +64,26 @@ class InventoryItem : Image {
             }
 
     val isInventoryItemOffensiveWand: Boolean
-        get() = itemUseType and ItemUseType.WAND_ONEHAND.value == ItemUseType.WAND_ONEHAND.value ||
-                itemUseType and ItemUseType.WAND_TWOHAND.value == ItemUseType.WAND_TWOHAND.value
+        get() = if (itemUseType and ItemUseType.WAND_ONEHAND.value == ItemUseType.WAND_ONEHAND.value ||
+                itemUseType and ItemUseType.WAND_TWOHAND.value == ItemUseType.WAND_TWOHAND.value) {
+            true
+        } else {
+            false
+        }
 
     val isInventoryItemOffensive: Boolean
-        get() = itemUseType and ItemUseType.WEAPON_ONEHAND.value == ItemUseType.WEAPON_ONEHAND.value || itemUseType and ItemUseType.WEAPON_TWOHAND.value == ItemUseType.WEAPON_TWOHAND.value || itemUseType and ItemUseType.WAND_ONEHAND.value == ItemUseType.WAND_ONEHAND.value || itemUseType and ItemUseType.WAND_TWOHAND.value == ItemUseType.WAND_TWOHAND.value
+        get() = if (itemUseType and ItemUseType.WEAPON_ONEHAND.value == ItemUseType.WEAPON_ONEHAND.value || itemUseType and ItemUseType.WEAPON_TWOHAND.value == ItemUseType.WEAPON_TWOHAND.value || itemUseType and ItemUseType.WAND_ONEHAND.value == ItemUseType.WAND_ONEHAND.value || itemUseType and ItemUseType.WAND_TWOHAND.value == ItemUseType.WAND_TWOHAND.value) {
+            true
+        } else {
+            false
+        }
 
     val isInventoryItemDefensive: Boolean
-        get() = itemUseType and ItemUseType.ARMOR_CHEST.value == ItemUseType.ARMOR_CHEST.value || itemUseType and ItemUseType.ARMOR_HELMET.value == ItemUseType.ARMOR_HELMET.value || itemUseType and ItemUseType.ARMOR_FEET.value == ItemUseType.ARMOR_FEET.value || itemUseType and ItemUseType.ARMOR_SHIELD.value == ItemUseType.ARMOR_SHIELD.value
+        get() = if (itemUseType and ItemUseType.ARMOR_CHEST.value == ItemUseType.ARMOR_CHEST.value || itemUseType and ItemUseType.ARMOR_HELMET.value == ItemUseType.ARMOR_HELMET.value || itemUseType and ItemUseType.ARMOR_FEET.value == ItemUseType.ARMOR_FEET.value || itemUseType and ItemUseType.ARMOR_SHIELD.value == ItemUseType.ARMOR_SHIELD.value) {
+            true
+        } else {
+            false
+        }
 
     companion object {
         @kotlin.jvm.JvmStatic

@@ -8,8 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 
-class ScreenTransitionActor: Image {
-    var transitionColor: Color = Color.BLACK
+class ScreenTransitionActor : Image {
+    var transitionColor = Color.BLACK
 
     constructor() {
         init()

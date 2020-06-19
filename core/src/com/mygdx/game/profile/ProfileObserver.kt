@@ -5,5 +5,5 @@ interface ProfileObserver {
         PROFILE_LOADED, SAVING_PROFILE, CLEAR_CURRENT_PROFILE
     }
 
-    fun onNotify(profileManager: ProfileManager?, event: ProfileEvent?)
+    fun onNotify(profileManager: ProfileManager, event: ProfileEvent)
 }

@@ -34,6 +34,8 @@ class ScreenTransitionAction : Action {
             }
             ScreenTransitionType.NONE -> {
             }
+            else -> {
+            }
         }
         return true
     }

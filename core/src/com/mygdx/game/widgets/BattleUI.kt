@@ -13,83 +13,86 @@ import com.badlogic.gdx.scenes.scene2d.ui.Window
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Array
-import com.mygdx.game.EntityConfig
+import com.mygdx.game.ecs.Entity
+import com.mygdx.game.ecs.Entity.AnimationType
+import com.mygdx.game.ecs.EntityConfig
 import com.mygdx.game.Utility
+import com.mygdx.game.battle.BattleObserver
+import com.mygdx.game.battle.BattleObserver.BattleEvent
 import com.mygdx.game.battle.BattleState
 import com.mygdx.game.sfx.ParticleEffectFactory
+import com.mygdx.game.sfx.ParticleEffectFactory.getParticleEffect
 import com.mygdx.game.sfx.ShakeCamera
-import com.mygdx.game.temporal.BattleObserver
-import com.mygdx.game.temporal.BattleObserver.*
 
 class BattleUI : Window("BATTLE", Utility.STATUSUI_SKIN, "solidbackground"), BattleObserver {
-    private val image: AnimatedImage
-    private val enemyWidth = 96
-    private val enemyHeight = 96
+    private val _image: AnimatedImage
+    private val _enemyWidth = 96
+    private val _enemyHeight = 96
     var currentState: BattleState? = null
-    private var attackButton: TextButton? = null
-    private var runButton: TextButton? = null
-    private var damageValLabel: Label? = null
-    private var battleTimer = 0f
-    private val checkTimer = 1f
-    private var battleShakeCam: ShakeCamera? = null
-    private val effects: Array<ParticleEffect>
-    private var origDamageValLabelY = 0f
-    private val currentImagePosition: Vector2
+    private var _attackButton: TextButton? = null
+    private var _runButton: TextButton? = null
+    private var _damageValLabel: Label? = null
+    private var _battleTimer = 0f
+    private val _checkTimer = 1f
+    private var _battleShakeCam: ShakeCamera? = null
+    private val _effects: Array<ParticleEffect>
+    private var _origDamageValLabelY = 0f
+    private val _currentImagePosition: Vector2
     fun battleZoneTriggered(battleZoneValue: Int) {
         currentState!!.currentZoneLevel = battleZoneValue
     }
 
     val isBattleReady: Boolean
-        get() = if (battleTimer > checkTimer) {
-            battleTimer = 0f
+        get() = if (_battleTimer > _checkTimer) {
+            _battleTimer = 0f
             currentState!!.isOpponentReady
         } else {
             false
         }
 
-    override fun onNotify(enemyEntityConfig: EntityConfig?, event: BattleEvent?) {
+    override fun onNotify(enemyEntity: Entity, event: BattleEvent) {
         when (event) {
             BattleEvent.PLAYER_TURN_START -> {
-                runButton!!.isDisabled = true
-                runButton!!.touchable = Touchable.disabled
-                attackButton!!.isDisabled = true
-                attackButton!!.touchable = Touchable.disabled
+                _runButton!!.isDisabled = true
+                _runButton!!.touchable = Touchable.disabled
+                _attackButton!!.isDisabled = true
+                _attackButton!!.touchable = Touchable.disabled
             }
             BattleEvent.OPPONENT_ADDED -> {
-                image.setEntityConfig(enemyEntityConfig!!)
-                image.setCurrentAnimation(AnimationType.IMMOBILE)
-                image.setSize(enemyWidth.toFloat(), enemyHeight.toFloat())
-                image.setPosition(getCell(image).actorX, getCell(image).actorY)
-                currentImagePosition[image.x] = image.y
-                if (battleShakeCam == null) {
-                    battleShakeCam = ShakeCamera(currentImagePosition.x, currentImagePosition.y, 30.0f)
+                _image.setEntity(enemyEntity)
+                _image.setCurrentAnimation(AnimationType.IMMOBILE)
+                _image.setSize(_enemyWidth.toFloat(), _enemyHeight.toFloat())
+                _image.setPosition(getCell(_image).actorX, getCell(_image).actorY)
+                _currentImagePosition[_image.x] = _image.y
+                if (_battleShakeCam == null) {
+                    _battleShakeCam = ShakeCamera(_currentImagePosition.x, _currentImagePosition.y, 30.0f)
                 }
 
-                //Gdx.app.debug(TAG, "Image position: " + image.getX() + "," + image.getY() );
-                titleLabel.setText("Level " + currentState!!.currentZoneLevel + " " + enemyEntityConfig.entityID)
+                //Gdx.app.debug(TAG, "Image position: " + _image.getX() + "," + _image.getY() );
+                titleLabel.setText("Level " + currentState!!.currentZoneLevel + " " + enemyEntity.entityConfig!!.entityID)
             }
             BattleEvent.OPPONENT_HIT_DAMAGE -> {
-                val damage = enemyEntityConfig!!.getPropertyValue(EntityConfig.EntityProperties.ENTITY_HIT_DAMAGE_TOTAL.toString()).toInt()
-                damageValLabel!!.setText(damage.toString())
-                damageValLabel!!.y = origDamageValLabelY
-                battleShakeCam!!.startShaking()
-                damageValLabel!!.isVisible = true
+                val damage = enemyEntity.entityConfig!!.getPropertyValue(EntityConfig.EntityProperties.ENTITY_HIT_DAMAGE_TOTAL.toString()).toInt()
+                _damageValLabel!!.setText(damage.toString())
+                _damageValLabel!!.y = _origDamageValLabelY
+                _battleShakeCam!!.startShaking()
+                _damageValLabel!!.isVisible = true
             }
             BattleEvent.OPPONENT_DEFEATED -> {
-                damageValLabel!!.isVisible = false
-                damageValLabel!!.y = origDamageValLabelY
+                _damageValLabel!!.isVisible = false
+                _damageValLabel!!.y = _origDamageValLabelY
             }
             BattleEvent.OPPONENT_TURN_DONE -> {
-                attackButton!!.isDisabled = false
-                attackButton!!.touchable = Touchable.enabled
-                runButton!!.isDisabled = false
-                runButton!!.touchable = Touchable.enabled
+                _attackButton!!.isDisabled = false
+                _attackButton!!.touchable = Touchable.enabled
+                _runButton!!.isDisabled = false
+                _runButton!!.touchable = Touchable.enabled
             }
             BattleEvent.PLAYER_TURN_DONE -> currentState!!.opponentAttacks()
             BattleEvent.PLAYER_USED_MAGIC -> {
-                val x = currentImagePosition.x + enemyWidth / 2
-                val y = currentImagePosition.y + enemyHeight / 2
-                effects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectFactory.ParticleEffectType.WAND_ATTACK, x, y))
+                val x = _currentImagePosition.x + _enemyWidth / 2
+                val y = _currentImagePosition.y + _enemyHeight / 2
+                _effects.add(getParticleEffect(ParticleEffectFactory.ParticleEffectType.WAND_ATTACK, x, y))
             }
             else -> {
             }
@@ -97,17 +100,17 @@ class BattleUI : Window("BATTLE", Utility.STATUSUI_SKIN, "solidbackground"), Bat
     }
 
     fun resize() {
-        image.setPosition(getCell(image).actorX, getCell(image).actorY)
-        currentImagePosition[image.x] = image.y
-        Gdx.app.debug(TAG, "RESIZE Image position: " + image.x + "," + image.y)
-        if (battleShakeCam != null) {
-            battleShakeCam!!.setOrigPosition(currentImagePosition.x, currentImagePosition.y)
-            battleShakeCam!!.reset()
+        _image.setPosition(getCell(_image).actorX, getCell(_image).actorY)
+        _currentImagePosition[_image.x] = _image.y
+        Gdx.app.debug(TAG, "RESIZE Image position: " + _image.x + "," + _image.y)
+        if (_battleShakeCam != null) {
+            _battleShakeCam!!.setOrigPosition(_currentImagePosition.x, _currentImagePosition.y)
+            _battleShakeCam!!.reset()
         }
     }
 
     fun resetDefaults() {
-        battleTimer = 0f
+        _battleTimer = 0f
         currentState!!.resetDefaults()
     }
 
@@ -115,25 +118,25 @@ class BattleUI : Window("BATTLE", Utility.STATUSUI_SKIN, "solidbackground"), Bat
         super.draw(batch, parentAlpha)
 
         //Draw the particles last
-        for (i in 0 until effects.size) {
-            val effect = effects[i] ?: continue
+        for (i in 0 until _effects.size) {
+            val effect = _effects[i] ?: continue
             effect.draw(batch)
         }
     }
 
     override fun act(delta: Float) {
-        battleTimer = (battleTimer + delta) % 60
-        if (damageValLabel!!.isVisible && damageValLabel!!.y < height) {
-            damageValLabel!!.y = damageValLabel!!.y + 5
+        _battleTimer = (_battleTimer + delta) % 60
+        if (_damageValLabel!!.isVisible && _damageValLabel!!.y < height) {
+            _damageValLabel!!.y = _damageValLabel!!.y + 5
         }
-        if (battleShakeCam != null && battleShakeCam!!.isCameraShaking) {
-            val shakeCoords = battleShakeCam!!.newShakePosition
-            image.setPosition(shakeCoords.x, shakeCoords.y)
+        if (_battleShakeCam != null && _battleShakeCam!!.isCameraShaking) {
+            val shakeCoords = _battleShakeCam!!.newShakePosition
+            _image.setPosition(shakeCoords.x, shakeCoords.y)
         }
-        for (i in 0 until effects.size) {
-            val effect = effects[i] ?: continue
+        for (i in 0 until _effects.size) {
+            val effect = _effects[i] ?: continue
             if (effect.isComplete) {
-                effects.removeIndex(i)
+                _effects.removeIndex(i)
                 effect.dispose()
             } else {
                 effect.update(delta)
@@ -147,37 +150,37 @@ class BattleUI : Window("BATTLE", Utility.STATUSUI_SKIN, "solidbackground"), Bat
     }
 
     init {
-        battleTimer = 0f
+        _battleTimer = 0f
         currentState = BattleState()
         currentState!!.addObserver(this)
-        effects = Array()
-        currentImagePosition = Vector2(0f, 0f)
-        damageValLabel = Label("0", Utility.STATUSUI_SKIN)
-        damageValLabel!!.isVisible = false
-        image = AnimatedImage()
-        image.touchable = Touchable.disabled
+        _effects = Array()
+        _currentImagePosition = Vector2(0F, 0F)
+        _damageValLabel = Label("0", Utility.STATUSUI_SKIN)
+        _damageValLabel!!.setVisible(false)
+        _image = AnimatedImage()
+        _image.touchable = Touchable.disabled
         val table = Table()
-        attackButton = TextButton("Attack", Utility.STATUSUI_SKIN, "inventory")
-        runButton = TextButton("Run", Utility.STATUSUI_SKIN, "inventory")
-        table.add(attackButton).pad(20f, 20f, 20f, 20f)
+        _attackButton = TextButton("Attack", Utility.STATUSUI_SKIN, "inventory")
+        _runButton = TextButton("Run", Utility.STATUSUI_SKIN, "inventory")
+        table.add(_attackButton).pad(20f, 20f, 20f, 20f)
         table.row()
-        table.add(runButton).pad(20f, 20f, 20f, 20f)
+        table.add(_runButton).pad(20f, 20f, 20f, 20f)
 
         //layout
         setFillParent(true)
-        this.add(damageValLabel).align(Align.left).padLeft(enemyWidth / 2.toFloat()).row()
-        this.add(image).size(enemyWidth.toFloat(), enemyHeight.toFloat()).pad(10f, 10f, 10f, enemyWidth / 2.toFloat())
+        this.add(_damageValLabel).align(Align.left).padLeft(_enemyWidth / 2.toFloat()).row()
+        this.add(_image).size(_enemyWidth.toFloat(), _enemyHeight.toFloat()).pad(10f, 10f, 10f, _enemyWidth / 2.toFloat())
         this.add(table)
         pack()
-        origDamageValLabelY = damageValLabel!!.y + enemyHeight
-        attackButton!!.addListener(
+        _origDamageValLabelY = _damageValLabel!!.getY() + _enemyHeight
+        _attackButton!!.addListener(
                 object : ClickListener() {
                     override fun clicked(event: InputEvent, x: Float, y: Float) {
                         currentState!!.playerAttacks()
                     }
                 }
         )
-        runButton!!.addListener(
+        _runButton!!.addListener(
                 object : ClickListener() {
                     override fun clicked(event: InputEvent, x: Float, y: Float) {
                         currentState!!.playerRuns()

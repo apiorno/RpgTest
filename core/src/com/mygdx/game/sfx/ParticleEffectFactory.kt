@@ -7,7 +7,6 @@ import com.badlogic.gdx.math.Vector2
 object ParticleEffectFactory {
     private const val SFX_ROOT_DIR = "sfx"
 
-
     fun getParticleEffect(particleEffectType: ParticleEffectType, positionX: Float, positionY: Float): ParticleEffect {
         val effect = ParticleEffect()
         effect.load(Gdx.files.internal(particleEffectType.value), Gdx.files.internal(SFX_ROOT_DIR))

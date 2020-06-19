@@ -1,27 +1,26 @@
 package com.mygdx.game.dialog
 
 import com.badlogic.gdx.utils.Json
-import com.mygdx.game.temporal.ConversationGraphSubject
 import java.util.*
 
 class ConversationGraph : ConversationGraphSubject {
-    private var conversations: Hashtable<String?, Conversation?>? = null
+    private var conversations: Hashtable<String, Conversation>? = null
     private var associatedChoices: Hashtable<String, ArrayList<ConversationChoice>>? = null
     var currentConversationID: String? = null
         private set
 
     constructor() {}
-    constructor(conversations: Hashtable<String?, Conversation?>, rootID: String?) {
+    constructor(conversations: Hashtable<String, Conversation>?, rootID: String?) {
         setConversations(conversations)
         setCurrentConversation(rootID)
     }
 
-    fun setConversations(conversations: Hashtable<String?, Conversation?>) {
-        require(conversations.size >= 0) { "Can't have a negative amount of conversations" }
+    fun setConversations(conversations: Hashtable<String, Conversation>?) {
+        require(conversations?.size!! >= 0) { "Can't have a negative amount of conversations" }
         this.conversations = conversations
-        associatedChoices = Hashtable<String, ArrayList<ConversationChoice>>(conversations.size)
+        associatedChoices = Hashtable(conversations.size)
         for (conversation in conversations.values) {
-            associatedChoices!![conversation!!.id] = ArrayList()
+            associatedChoices!![conversation?.id] = ArrayList()
         }
     }
 
@@ -29,7 +28,7 @@ class ConversationGraph : ConversationGraphSubject {
         get() = associatedChoices!![currentConversationID]!!
 
     fun setCurrentConversation(id: String?) {
-        getConversationByID(id) ?: return
+        val conversation = getConversationByID(id) ?: return
         //Can we reach the new conversation from the current one?
 
         //Make sure we check case where the current node is checked against itself
@@ -42,12 +41,12 @@ class ConversationGraph : ConversationGraphSubject {
         }
     }
 
-    private fun isValid(conversationID: String?): Boolean {
-        conversations!![conversationID] ?: return false
+    fun isValid(conversationID: String?): Boolean {
+        val conversation = conversations!![conversationID] ?: return false
         return true
     }
 
-    private fun isReachable(sourceID: String?, sinkID: String?): Boolean {
+    fun isReachable(sourceID: String?, sinkID: String?): Boolean {
         if (!isValid(sourceID) || !isValid(sinkID)) return false
         if (conversations!![sourceID] == null) return false
 

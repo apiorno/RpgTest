@@ -1,24 +1,29 @@
 package com.mygdx.game.profile
 
 import com.badlogic.gdx.utils.Array
-import com.mygdx.game.profile.ProfileObserver.*
+import com.mygdx.game.profile.ProfileObserver.ProfileEvent
 
 open class ProfileSubject {
-    private val observers: Array<ProfileObserver> = Array()
-
+    private val _observers: Array<ProfileObserver>
     fun addObserver(profileObserver: ProfileObserver) {
-        observers.add(profileObserver)
+        _observers.add(profileObserver)
     }
 
     fun removeObserver(profileObserver: ProfileObserver) {
-        observers.removeValue(profileObserver, true)
+        _observers.removeValue(profileObserver, true)
     }
 
     fun removeAllObservers() {
-        observers.removeAll(observers, true)
+        _observers.removeAll(_observers, true)
     }
 
-    protected fun notify(profileManager: ProfileManager?, event: ProfileEvent?) {
-        observers.forEach { it.onNotify(profileManager,event) }
+    protected fun notify(profileManager: ProfileManager, event: ProfileEvent) {
+        for (observer in _observers) {
+            observer.onNotify(profileManager, event)
+        }
+    }
+
+    init {
+        _observers = Array()
     }
 }

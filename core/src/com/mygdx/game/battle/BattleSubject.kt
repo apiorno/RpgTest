@@ -1,24 +1,26 @@
 package com.mygdx.game.battle
 
 import com.badlogic.gdx.utils.Array
-import com.mygdx.game.EntityConfig
-import com.mygdx.game.temporal.BattleObserver
-import com.mygdx.game.temporal.BattleObserver.*
+import com.mygdx.game.ecs.Entity
+import com.mygdx.game.battle.BattleObserver.BattleEvent
 
 open class BattleSubject {
-    private val observers: Array<BattleObserver> = Array()
+    private val _observers: Array<BattleObserver>
     fun addObserver(battleObserver: BattleObserver) {
-        observers.add(battleObserver)
+        _observers.add(battleObserver)
     }
 
     fun removeObserver(battleObserver: BattleObserver) {
-        observers.removeValue(battleObserver, true)
+        _observers.removeValue(battleObserver, true)
     }
 
-    protected fun notify(entityConfig: EntityConfig?, event: BattleEvent?) {
-        for (observer in observers) {
-            observer.onNotify(entityConfig, event)
+    protected fun notify(entity: Entity, event: BattleEvent) {
+        for (observer in _observers) {
+            observer.onNotify(entity, event)
         }
     }
 
+    init {
+        _observers = Array()
+    }
 }

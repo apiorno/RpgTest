@@ -6,45 +6,45 @@ import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonValue
 import com.badlogic.gdx.utils.Scaling
 import com.mygdx.game.Utility
-import com.mygdx.game.widgets.InventoryItem.*
+import com.mygdx.game.widgets.InventoryItem.ItemTypeID
 import java.util.*
 
 class InventoryItemFactory private constructor() {
-    private val json = Json()
+    private val _json = Json()
     private val INVENTORY_ITEM = "scripts/inventory_items.json"
-    private val inventoryItemList: Hashtable<ItemTypeID?, InventoryItem>
+    private val _inventoryItemList: Hashtable<ItemTypeID?, InventoryItem>
     fun getInventoryItem(inventoryItemType: ItemTypeID?): InventoryItem {
-        val item = InventoryItem(inventoryItemList[inventoryItemType])
+        val item = InventoryItem(_inventoryItemList[inventoryItemType])
         item.drawable = TextureRegionDrawable(Utility.ITEMS_TEXTUREATLAS.findRegion(item.itemTypeID.toString()))
         item.setScaling(Scaling.none)
         return item
     } /*
     public void testAllItemLoad(){
         for(ItemTypeID itemTypeID : ItemTypeID.values()) {
-            InventoryItem item = new InventoryItem(inventoryItemList.get(itemTypeID));
+            InventoryItem item = new InventoryItem(_inventoryItemList.get(itemTypeID));
             item.setDrawable(new TextureRegionDrawable(PlayerHUD.itemsTextureAtlas.findRegion(item.getItemTypeID().toString())));
             item.setScaling(Scaling.none);
         }
     }*/
 
     companion object {
-        private var uniqueInstance: InventoryItemFactory? = null
+        private var _instance: InventoryItemFactory? = null
         @kotlin.jvm.JvmStatic
         val instance: InventoryItemFactory?
             get() {
-                if (uniqueInstance == null) {
-                    uniqueInstance = InventoryItemFactory()
+                if (_instance == null) {
+                    _instance = InventoryItemFactory()
                 }
-                return uniqueInstance
+                return _instance
             }
     }
 
     init {
-        @Suppress("UNCHECKED_CAST") val list: ArrayList<JsonValue> = json.fromJson(ArrayList::class.java, Gdx.files.internal(INVENTORY_ITEM)) as ArrayList<JsonValue>
-        inventoryItemList = Hashtable()
+        @Suppress("UNCHECKED_CAST") val list: ArrayList<JsonValue> = _json.fromJson(ArrayList::class.java, Gdx.files.internal(INVENTORY_ITEM)) as ArrayList<JsonValue>
+        _inventoryItemList = Hashtable()
         for (jsonVal in list) {
-            val inventoryItem = json.readValue(InventoryItem::class.java, jsonVal)
-            inventoryItemList[inventoryItem.itemTypeID] = inventoryItem
+            val inventoryItem = _json.readValue(InventoryItem::class.java, jsonVal)
+            _inventoryItemList[inventoryItem.itemTypeID] = inventoryItem
         }
     }
 }

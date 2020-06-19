@@ -43,11 +43,11 @@ class ClockActor : Label {
     val currentTimeOfDay: TimeOfDay
         get() {
             val hours = currentTimeHours
-            return if (hours in 7..9) {
+            return if (hours >= 7 && hours <= 9) {
                 TimeOfDay.DAWN
-            } else if (hours in 10..16) {
+            } else if (hours >= 10 && hours <= 16) {
                 TimeOfDay.AFTERNOON
-            } else if (hours in 17..19) {
+            } else if (hours >= 17 && hours <= 19) {
                 TimeOfDay.DUSK
             } else {
                 TimeOfDay.NIGHT
@@ -59,8 +59,12 @@ class ClockActor : Label {
         val seconds = currentTimeSeconds
         val minutes = currentTimeMinutes
         var hours = currentTimeHours
-        _isAfternoon = !(hours == 24 || hours / 12 == 0)
-        hours %= 12
+        _isAfternoon = if (hours == 24 || hours / 12 == 0) {
+            false
+        } else {
+            true
+        }
+        hours = hours % 12
         if (hours == 0) {
             hours = 12
         }

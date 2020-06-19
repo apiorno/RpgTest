@@ -3,34 +3,28 @@ package com.mygdx.game.widgets
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.ui.List
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane
 import com.badlogic.gdx.scenes.scene2d.ui.Window
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
-import com.badlogic.gdx.scenes.scene2d.ui.List
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
-import com.mygdx.game.Utility
 import com.mygdx.game.maps.MapManager
+import com.mygdx.game.Utility
 import com.mygdx.game.profile.ProfileManager
-import com.mygdx.game.quests.QuestGraph
-import com.mygdx.game.quests.QuestTask
+import com.mygdx.game.quest.QuestGraph
+import com.mygdx.game.quest.QuestTask
 
 class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
-    private val listQuests = List<QuestGraph>(Utility.STATUSUI_SKIN)
-    private val listTasks: List<QuestTask>
-
-    private val json = Json()
-    var quests: Array<QuestGraph> = Array()
-        set(quests) {
-            this@QuestUI.quests = quests
-            updateQuestItemList()
-            field = quests
-        }
-    private val questLabel: Label = Label("Quests:", Utility.STATUSUI_SKIN)
-    private val tasksLabel: Label = Label("Tasks:", Utility.STATUSUI_SKIN)
+    private val _listQuests: List<QuestGraph>
+    private val _listTasks: List<QuestTask>
+    private val _json: Json
+    private var _quests: Array<QuestGraph>
+    private val _questLabel: Label
+    private val _tasksLabel: Label
     fun questTaskComplete(questID: String?, questTaskID: String?) {
-        for (questGraph in quests) {
+        for (questGraph in _quests) {
             if (questGraph.questID.equals(questID, ignoreCase = true)) {
                 if (questGraph.isQuestTaskAvailable(questTaskID)) {
                     questGraph.setQuestTaskComplete(questTaskID)
@@ -46,12 +40,12 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
             Gdx.app.debug(TAG, "Quest file does not exist!")
             return null
         }
-        val graph = json.fromJson(QuestGraph::class.java, Gdx.files.internal(questConfigPath))
+        val graph = _json.fromJson(QuestGraph::class.java, Gdx.files.internal(questConfigPath))
         if (doesQuestExist(graph.questID)) {
             return null
         }
         clearDialog()
-        quests.add(graph)
+        _quests.add(graph)
         updateQuestItemList()
         return graph
     }
@@ -72,7 +66,7 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
     }
 
     fun getQuestByID(questGraphID: String?): QuestGraph? {
-        for (questGraph in quests) {
+        for (questGraph in _quests) {
             if (questGraph.questID.equals(questGraphID, ignoreCase = true)) {
                 return questGraph
             }
@@ -80,8 +74,8 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
         return null
     }
 
-    private fun doesQuestExist(questGraphID: String?): Boolean {
-        for (questGraph in quests) {
+    fun doesQuestExist(questGraphID: String?): Boolean {
+        for (questGraph in _quests) {
             if (questGraph.questID.equals(questGraphID, ignoreCase = true)) {
                 return true
             }
@@ -89,45 +83,50 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
         return false
     }
 
+    var quests: Array<QuestGraph>
+        get() = _quests
+        set(quests) {
+            _quests = quests
+            updateQuestItemList()
+        }
 
-
-    private fun updateQuestItemList() {
+    fun updateQuestItemList() {
         clearDialog()
-        listQuests.setItems(quests)
-        listQuests.selectedIndex = -1
+        _listQuests.setItems(_quests)
+        _listQuests.selectedIndex = -1
     }
 
     private fun clearDialog() {
-        listQuests.clearItems()
-        listTasks.clearItems()
+        _listQuests.clearItems()
+        _listTasks.clearItems()
     }
 
     private fun populateQuestTaskDialog(graph: QuestGraph) {
-        listTasks.clearItems()
+        _listTasks.clearItems()
         val tasks = graph.allQuestTasks
-        listTasks.setItems(*tasks.toTypedArray())
-        listTasks.selectedIndex = -1
+        _listTasks.setItems(*tasks.toTypedArray())
+        _listTasks.selectedIndex = -1
     }
 
     fun initQuests(mapMgr: MapManager) {
-        //mapMgr.clearAllMapQuestEntities()
+        mapMgr.clearAllMapQuestEntities()
 
         //populate items if quests have them
-        for (quest in quests) {
+        for (quest in _quests) {
             if (!quest.isQuestComplete) {
                 quest.init(mapMgr)
             }
         }
-        ProfileManager.instance.setProperty("playerQuests", quests)
+        ProfileManager.instance!!.setProperty("playerQuests", _quests)
     }
 
     fun updateQuests(mapMgr: MapManager?) {
-        for (quest in quests) {
+        for (quest in _quests) {
             if (!quest.isQuestComplete) {
                 quest.update(mapMgr!!)
             }
         }
-        ProfileManager.instance.setProperty("playerQuests", quests)
+        ProfileManager.instance!!.setProperty("playerQuests", _quests)
     }
 
     companion object {
@@ -137,20 +136,26 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
     }
 
     init {
+        _json = Json()
+        _quests = Array()
+
         //create
-        val scrollPane = ScrollPane(listQuests, Utility.STATUSUI_SKIN, "inventoryPane")
+        _questLabel = Label("Quests:", Utility.STATUSUI_SKIN)
+        _tasksLabel = Label("Tasks:", Utility.STATUSUI_SKIN)
+        _listQuests = List<QuestGraph>(Utility.STATUSUI_SKIN)
+        val scrollPane = ScrollPane(_listQuests, Utility.STATUSUI_SKIN, "inventoryPane")
         scrollPane.setOverscroll(false, false)
-        scrollPane.fadeScrollBars = false
+        scrollPane.setFadeScrollBars(false)
         scrollPane.setForceScroll(true, false)
-        listTasks = List<QuestTask>(Utility.STATUSUI_SKIN)
-        val scrollPaneTasks = ScrollPane(listTasks, Utility.STATUSUI_SKIN, "inventoryPane")
+        _listTasks = List<QuestTask>(Utility.STATUSUI_SKIN)
+        val scrollPaneTasks = ScrollPane(_listTasks, Utility.STATUSUI_SKIN, "inventoryPane")
         scrollPaneTasks.setOverscroll(false, false)
-        scrollPaneTasks.fadeScrollBars = false
+        scrollPaneTasks.setFadeScrollBars(false)
         scrollPaneTasks.setForceScroll(true, false)
 
         //layout
-        this.add(questLabel).align(Align.left)
-        this.add(tasksLabel).align(Align.left)
+        this.add(_questLabel).align(Align.left)
+        this.add(_tasksLabel).align(Align.left)
         row()
         defaults().expand().fill()
         this.add(scrollPane).padRight(15f)
@@ -160,9 +165,9 @@ class QuestUI : Window("Quest Log", Utility.STATUSUI_SKIN, "solidbackground") {
         pack()
 
         //Listeners
-        listQuests.addListener(object : ClickListener() {
+        _listQuests.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent, x: Float, y: Float) {
-                val quest = listQuests.selected as QuestGraph
+                val quest = _listQuests.selected as QuestGraph ?: return
                 populateQuestTaskDialog(quest)
             }
         }

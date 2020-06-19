@@ -1,6 +1,5 @@
 package com.mygdx.game.widgets
 
-import MESSAGE_TOKEN
 import com.badlogic.gdx.graphics.g2d.NinePatch
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
@@ -12,38 +11,37 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.Array
-import com.mygdx.game.EntityConfig
+import com.mygdx.game.ecs.Component
+import com.mygdx.game.ecs.Entity
+import com.mygdx.game.widgets.InventoryItem.ItemTypeID
+import com.mygdx.game.widgets.InventoryItem.ItemUseType
+import com.mygdx.game.widgets.InventoryObserver.InventoryEvent
+import com.mygdx.game.widgets.InventorySlotObserver.SlotEvent
 import com.mygdx.game.Utility
-import com.mygdx.game.temporal.InventoryObserver
-import com.mygdx.game.temporal.InventoryObserver.*
-import com.mygdx.game.temporal.InventorySlotObserver
-import com.mygdx.game.temporal.InventorySlotObserver.*
-import com.mygdx.game.temporal.InventorySubject
-import com.mygdx.game.widgets.InventoryItem.*
 
 class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"), InventorySubject, InventorySlotObserver {
-    private val lengthSlotRow = 10
+    private val _lengthSlotRow = 10
     val inventorySlotTable: Table
-    private val playerSlotsTable: Table
+    private val _playerSlotsTable: Table
     val equipSlotTable: Table
-    val dragAndDrop: DragAndDrop = DragAndDrop()
+    val dragAndDrop: DragAndDrop
     val inventoryActors: Array<Actor>
-    private val DPValLabel: Label
-    private var DPVal = 0
-    private val APValLabel: Label
-    private var APVal = 0
-    private val slotWidth = 52
-    private val slotHeight = 52
-    private val observers: Array<InventoryObserver?> = Array()
-    private val inventorySlotTooltip: InventorySlotTooltip
+    private val _DPValLabel: Label
+    private var _DPVal = 0
+    private val _APValLabel: Label
+    private var _APVal = 0
+    private val _slotWidth = 52
+    private val _slotHeight = 52
+    private val _observers: Array<InventoryObserver?>
+    private val _inventorySlotTooltip: InventorySlotTooltip
 
     fun resetEquipSlots() {
-        DPVal = 0
-        APVal = 0
-        DPValLabel.setText(DPVal.toString())
-        notify(DPVal.toString(), InventoryEvent.UPDATED_DP)
-        APValLabel.setText(APVal.toString())
-        notify(APVal.toString(), InventoryEvent.UPDATED_AP)
+        _DPVal = 0
+        _APVal = 0
+        _DPValLabel.setText(_DPVal.toString())
+        notify(_DPVal.toString(), InventoryEvent.UPDATED_DP)
+        _APValLabel.setText(_APVal.toString())
+        notify(_APVal.toString(), InventoryEvent.UPDATED_AP)
     }
 
     fun doesInventoryHaveSpace(): Boolean {
@@ -66,18 +64,18 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         return false
     }
 
-    fun addEntityToInventory(entityConfig: EntityConfig, itemName: String?) {
+    fun addEntityToInventory(entity: Entity, itemName: String?) {
         val sourceCells = inventorySlotTable.cells
         var index = 0
         while (index < sourceCells.size) {
             val inventorySlot = sourceCells[index].actor as InventorySlot?
             if (inventorySlot == null) {
-                index.inc()
+                index++
                 continue
             }
             val numItems = inventorySlot.numItems
             if (numItems == 0) {
-                val inventoryItem = InventoryItemFactory.instance!!.getInventoryItem(ItemTypeID.valueOf(entityConfig.itemTypeID!!))
+                val inventoryItem = InventoryItemFactory.instance!!.getInventoryItem(ItemTypeID.valueOf(entity.entityConfig!!.itemTypeID!!))
                 inventoryItem.name = itemName
                 inventorySlot.add(inventoryItem)
                 dragAndDrop.addSource(InventorySlotSource(inventorySlot, dragAndDrop))
@@ -90,7 +88,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
     fun removeQuestItemFromInventory(questID: String?) {
         val sourceCells = inventorySlotTable.cells
         for (index in 0 until sourceCells.size) {
-            val inventorySlot = sourceCells[index].actor as InventorySlot
+            val inventorySlot = sourceCells[index].actor as InventorySlot? ?: continue
             val item = inventorySlot.topInventoryItem ?: continue
             val inventoryItemName = item.name
             if (inventoryItemName != null && inventoryItemName == questID) {
@@ -99,36 +97,69 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         }
     }
 
-
-
-    override fun addObserver(inventoryObserver: InventoryObserver?) {
-        observers.add(inventoryObserver)
-    }
-
-    override fun removeObserver(inventoryObserver: InventoryObserver?) {
-        observers.removeValue(inventoryObserver, true)
-    }
-
-    override fun removeAllObservers() {
-        for (observer in observers) {
-            observers.removeValue(observer, true)
+    override fun onNotify(slot: InventorySlot, event: SlotEvent) {
+        when (event) {
+            SlotEvent.ADDED_ITEM -> {
+                val addItem = slot.topInventoryItem ?: return
+                if (addItem.isInventoryItemOffensive) {
+                    _APVal += addItem.itemUseTypeValue
+                    _APValLabel.setText(_APVal.toString())
+                    notify(_APVal.toString(), InventoryEvent.UPDATED_AP)
+                    if (addItem.isInventoryItemOffensiveWand) {
+                        notify(java.lang.String.valueOf(addItem.itemUseTypeValue), InventoryEvent.ADD_WAND_AP)
+                    }
+                } else if (addItem.isInventoryItemDefensive) {
+                    _DPVal += addItem.itemUseTypeValue
+                    _DPValLabel.setText(_DPVal.toString())
+                    notify(_DPVal.toString(), InventoryEvent.UPDATED_DP)
+                }
+            }
+            SlotEvent.REMOVED_ITEM -> {
+                val removeItem = slot.topInventoryItem ?: return
+                if (removeItem.isInventoryItemOffensive) {
+                    _APVal -= removeItem.itemUseTypeValue
+                    _APValLabel.setText(_APVal.toString())
+                    notify(_APVal.toString(), InventoryEvent.UPDATED_AP)
+                    if (removeItem.isInventoryItemOffensiveWand) {
+                        notify(java.lang.String.valueOf(removeItem.itemUseTypeValue), InventoryEvent.REMOVE_WAND_AP)
+                    }
+                } else if (removeItem.isInventoryItemDefensive) {
+                    _DPVal -= removeItem.itemUseTypeValue
+                    _DPValLabel.setText(_DPVal.toString())
+                    notify(_DPVal.toString(), InventoryEvent.UPDATED_DP)
+                }
+            }
         }
     }
 
-    override fun notify(value: String, event: InventoryEvent?) {
-        for (observer in observers) {
+    override fun addObserver(inventoryObserver: InventoryObserver) {
+        _observers.add(inventoryObserver)
+    }
+
+    override fun removeObserver(inventoryObserver: InventoryObserver) {
+        _observers.removeValue(inventoryObserver, true)
+    }
+
+    override fun removeAllObservers() {
+        for (observer in _observers) {
+            _observers.removeValue(observer, true)
+        }
+    }
+
+    override fun notify(value: String, event: InventoryEvent) {
+        for (observer in _observers) {
             observer!!.onNotify(value, event)
         }
     }
 
     companion object {
-        const val numSlots = 50
+        const val _numSlots = 50
         const val PLAYER_INVENTORY = "Player_Inventory"
         const val STORE_INVENTORY = "Store_Inventory"
         fun clearInventoryItems(targetTable: Table?) {
             val cells = targetTable!!.cells
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot
+                val inventorySlot = cells[i].actor as InventorySlot? ?: continue
                 inventorySlot.clearAllInventoryItems(false)
             }
         }
@@ -137,7 +168,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             val cells = inventoryTable.cells
             val items = Array<InventoryItemLocation>()
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot
+                val inventorySlot = cells[i].actor as InventorySlot? ?: continue
                 inventorySlot.removeAllInventoryItemsWithName(name)
             }
             return items
@@ -172,7 +203,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             val cells = targetTable!!.cells
             val items = Array<InventoryItemLocation>()
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot
+                val inventorySlot = cells[i].actor as InventorySlot? ?: continue
                 val numItems = inventorySlot.numItems
                 if (numItems > 0) {
                     items.add(InventoryItemLocation(
@@ -189,7 +220,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             val cells = targetTable.cells
             val items = Array<InventoryItemLocation>()
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot
+                val inventorySlot = cells[i].actor as InventorySlot? ?: continue
                 val numItems = inventorySlot.numItems
                 if (numItems > 0) {
                     val topItemName = inventorySlot.topInventoryItem?.name
@@ -209,7 +240,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
             val cells = targetTable.cells
             val items = Array<InventoryItemLocation>()
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot
+                val inventorySlot = cells[i].actor as InventorySlot? ?: continue
                 val numItems = inventorySlot.getNumItems(name)
                 if (numItems > 0) {
                     //System.out.println("[i] " + i + " itemtype: " + inventorySlot.getTopInventoryItem().getItemTypeID().toString() + " numItems " + numItems);
@@ -254,34 +285,36 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         fun setInventoryItemNames(targetTable: Table, name: String?) {
             val cells = targetTable.cells
             for (i in 0 until cells.size) {
-                val inventorySlot = cells[i].actor as InventorySlot
+                val inventorySlot = cells[i].actor as InventorySlot? ?: continue
                 inventorySlot.updateAllInventoryItemNames(name)
             }
         }
     }
 
     init {
+        _observers = Array()
+        dragAndDrop = DragAndDrop()
         inventoryActors = Array()
 
         //create
         inventorySlotTable = Table()
         inventorySlotTable.name = "Inventory_Slot_Table"
-        playerSlotsTable = Table()
+        _playerSlotsTable = Table()
         equipSlotTable = Table()
         equipSlotTable.name = "Equipment_Slot_Table"
         equipSlotTable.defaults().space(10f)
-        inventorySlotTooltip = InventorySlotTooltip(Utility.STATUSUI_SKIN)
+        _inventorySlotTooltip = InventorySlotTooltip(Utility.STATUSUI_SKIN)
         val DPLabel = Label("Defense: ", Utility.STATUSUI_SKIN)
-        DPValLabel = Label(DPVal.toString(), Utility.STATUSUI_SKIN)
+        _DPValLabel = Label(_DPVal.toString(), Utility.STATUSUI_SKIN)
         val APLabel = Label("Attack : ", Utility.STATUSUI_SKIN)
-        APValLabel = Label(APVal.toString(), Utility.STATUSUI_SKIN)
+        _APValLabel = Label(_APVal.toString(), Utility.STATUSUI_SKIN)
         val labelTable = Table()
         labelTable.add(DPLabel).align(Align.left)
-        labelTable.add(DPValLabel).align(Align.center)
+        labelTable.add(_DPValLabel).align(Align.center)
         labelTable.row()
         labelTable.row()
         labelTable.add(APLabel).align(Align.left)
-        labelTable.add(APValLabel).align(Align.center)
+        labelTable.add(_APValLabel).align(Align.center)
         val headSlot = InventorySlot(
                 ItemUseType.ARMOR_HELMET.value,
                 Image(Utility.ITEMS_TEXTUREATLAS.findRegion("inv_helmet")))
@@ -307,11 +340,11 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         val legsSlot = InventorySlot(
                 ItemUseType.ARMOR_FEET.value,
                 Image(Utility.ITEMS_TEXTUREATLAS.findRegion("inv_boot")))
-        headSlot.addListener(InventorySlotTooltipListener(inventorySlotTooltip))
-        leftArmSlot.addListener(InventorySlotTooltipListener(inventorySlotTooltip))
-        rightArmSlot.addListener(InventorySlotTooltipListener(inventorySlotTooltip))
-        chestSlot.addListener(InventorySlotTooltipListener(inventorySlotTooltip))
-        legsSlot.addListener(InventorySlotTooltipListener(inventorySlotTooltip))
+        headSlot.addListener(InventorySlotTooltipListener(_inventorySlotTooltip))
+        leftArmSlot.addListener(InventorySlotTooltipListener(_inventorySlotTooltip))
+        rightArmSlot.addListener(InventorySlotTooltipListener(_inventorySlotTooltip))
+        chestSlot.addListener(InventorySlotTooltipListener(_inventorySlotTooltip))
+        legsSlot.addListener(InventorySlotTooltipListener(_inventorySlotTooltip))
         headSlot.addObserver(this)
         leftArmSlot.addObserver(this)
         rightArmSlot.addObserver(this)
@@ -322,14 +355,14 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
         dragAndDrop.addTarget(InventorySlotTarget(chestSlot))
         dragAndDrop.addTarget(InventorySlotTarget(rightArmSlot))
         dragAndDrop.addTarget(InventorySlotTarget(legsSlot))
-        playerSlotsTable.background = Image(NinePatch(Utility.STATUSUI_TEXTUREATLAS.createPatch("dialog"))).drawable
+        _playerSlotsTable.background = Image(NinePatch(Utility.STATUSUI_TEXTUREATLAS.createPatch("dialog"))).drawable
 
         //layout
-        for (i in 1..numSlots) {
+        for (i in 1.._numSlots) {
             val inventorySlot = InventorySlot()
-            inventorySlot.addListener(InventorySlotTooltipListener(inventorySlotTooltip))
+            inventorySlot.addListener(InventorySlotTooltipListener(_inventorySlotTooltip))
             dragAndDrop.addTarget(InventorySlotTarget(inventorySlot))
-            inventorySlotTable.add(inventorySlot).size(slotWidth.toFloat(), slotHeight.toFloat())
+            inventorySlotTable.add(inventorySlot).size(_slotWidth.toFloat(), _slotHeight.toFloat())
             inventorySlot.addListener(object : ClickListener() {
                 override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
                     super.touchUp(event, x, y, pointer, button)
@@ -338,7 +371,7 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
                         if (slot.hasItem()) {
                             val item = slot.topInventoryItem
                             if (item!!.isConsumable) {
-                                val itemInfo: String = item.itemUseType.toString() + MESSAGE_TOKEN + item.itemUseTypeValue.toString()
+                                val itemInfo: String = item.itemUseType.toString() + Component.MESSAGE_TOKEN + item.itemUseTypeValue.toString()
                                 this@InventoryUI.notify(itemInfo, InventoryEvent.ITEM_CONSUMED)
                                 slot.removeActor(item)
                                 slot.remove(item)
@@ -348,63 +381,26 @@ class InventoryUI : Window("Inventory", Utility.STATUSUI_SKIN, "solidbackground"
                 }
             }
             )
-            if (i % lengthSlotRow == 0) {
+            if (i % _lengthSlotRow == 0) {
                 inventorySlotTable.row()
             }
         }
         equipSlotTable.add()
-        equipSlotTable.add(headSlot).size(slotWidth.toFloat(), slotHeight.toFloat())
+        equipSlotTable.add(headSlot).size(_slotWidth.toFloat(), _slotHeight.toFloat())
         equipSlotTable.row()
-        equipSlotTable.add(leftArmSlot).size(slotWidth.toFloat(), slotHeight.toFloat())
-        equipSlotTable.add(chestSlot).size(slotWidth.toFloat(), slotHeight.toFloat())
-        equipSlotTable.add(rightArmSlot).size(slotWidth.toFloat(), slotHeight.toFloat())
+        equipSlotTable.add(leftArmSlot).size(_slotWidth.toFloat(), _slotHeight.toFloat())
+        equipSlotTable.add(chestSlot).size(_slotWidth.toFloat(), _slotHeight.toFloat())
+        equipSlotTable.add(rightArmSlot).size(_slotWidth.toFloat(), _slotHeight.toFloat())
         equipSlotTable.row()
         equipSlotTable.add()
-        equipSlotTable.right().add(legsSlot).size(slotWidth.toFloat(), slotHeight.toFloat())
-        playerSlotsTable.add(equipSlotTable)
-        inventoryActors.add(inventorySlotTooltip)
-        this.add(playerSlotsTable).padBottom(20f)
+        equipSlotTable.right().add(legsSlot).size(_slotWidth.toFloat(), _slotHeight.toFloat())
+        _playerSlotsTable.add(equipSlotTable)
+        inventoryActors.add(_inventorySlotTooltip)
+        this.add(_playerSlotsTable).padBottom(20f)
         this.add(labelTable)
         row()
         this.add(inventorySlotTable).colspan(2)
         row()
         pack()
-    }
-
-    override fun onNotify(slot: InventorySlot, event: SlotEvent?) {
-        when (event) {
-            SlotEvent.ADDED_ITEM -> {
-                val addItem = slot.topInventoryItem ?: return
-                if (addItem.isInventoryItemOffensive) {
-                    APVal += addItem.itemUseTypeValue
-                    APValLabel.setText(APVal.toString())
-                    notify(APVal.toString(), InventoryEvent.UPDATED_AP)
-                    if (addItem.isInventoryItemOffensiveWand) {
-                        notify(java.lang.String.valueOf(addItem.itemUseTypeValue), InventoryEvent.ADD_WAND_AP)
-                    }
-                } else if (addItem.isInventoryItemDefensive) {
-                    DPVal += addItem.itemUseTypeValue
-                    DPValLabel.setText(DPVal.toString())
-                    notify(DPVal.toString(), InventoryEvent.UPDATED_DP)
-                }
-            }
-            SlotEvent.REMOVED_ITEM -> {
-                val removeItem = slot.topInventoryItem ?: return
-                if (removeItem.isInventoryItemOffensive) {
-                    APVal -= removeItem.itemUseTypeValue
-                    APValLabel.setText(APVal.toString())
-                    notify(APVal.toString(), InventoryEvent.UPDATED_AP)
-                    if (removeItem.isInventoryItemOffensiveWand) {
-                        notify(java.lang.String.valueOf(removeItem.itemUseTypeValue), InventoryEvent.REMOVE_WAND_AP)
-                    }
-                } else if (removeItem.isInventoryItemDefensive) {
-                    DPVal -= removeItem.itemUseTypeValue
-                    DPValLabel.setText(DPVal.toString())
-                    notify(DPVal.toString(), InventoryEvent.UPDATED_DP)
-                }
-            }
-            else -> {
-            }
-        }
     }
 }
