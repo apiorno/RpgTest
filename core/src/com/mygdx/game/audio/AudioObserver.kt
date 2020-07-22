@@ -10,5 +10,5 @@ interface AudioObserver {
         MUSIC_LOAD, MUSIC_PLAY_ONCE, MUSIC_PLAY_LOOP, MUSIC_STOP, MUSIC_STOP_ALL, SOUND_LOAD, SOUND_PLAY_ONCE, SOUND_PLAY_LOOP, SOUND_STOP
     }
 
-    fun onNotify(command: AudioCommand?, event: AudioTypeEvent)
+    fun onNotify(command: AudioCommand, event: AudioTypeEvent)
 }

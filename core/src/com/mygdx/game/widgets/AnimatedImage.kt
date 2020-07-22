@@ -9,25 +9,25 @@ import com.mygdx.game.ecs.Entity
 import com.mygdx.game.ecs.Entity.AnimationType
 
 class AnimatedImage : Image() {
-    private var _frameTime = 0f
-    protected var _entity: Entity? = null
-    private var _currentAnimationType = AnimationType.IDLE
+    private var frameTime = 0f
+    private var entity: Entity? = null
+    private var currentAnimationType = AnimationType.IDLE
     fun setEntity(entity: Entity?) {
-        _entity = entity
+        this.entity = entity
         //set default
         setCurrentAnimation(AnimationType.IDLE)
     }
 
     fun setCurrentAnimation(animationType: AnimationType) {
-        val animation = _entity!!.getAnimation(animationType)
+        val animation = entity!!.getAnimation(animationType)
         if (animation == null) {
             Gdx.app.debug(TAG, "Animation type $animationType does not exist!")
             return
         }
-        _currentAnimationType = animationType
+        currentAnimationType = animationType
         drawable = TextureRegionDrawable(animation.getKeyFrame(0f))
         setScaling(Scaling.stretch)
-        setAlign(Align.center)
+        align = Align.center
         setSize(this.prefWidth, this.prefHeight)
     }
 
@@ -35,8 +35,8 @@ class AnimatedImage : Image() {
         val drawable = drawable
                 ?: //Gdx.app.debug(TAG, "Drawable is NULL!");
                 return
-        _frameTime = (_frameTime + delta) % 5
-        val region = _entity!!.getAnimation(_currentAnimationType)!!.getKeyFrame(_frameTime, true)!!
+        frameTime = (frameTime + delta) % 5
+        val region = entity!!.getAnimation(currentAnimationType)!!.getKeyFrame(frameTime, true)!!
         //Gdx.app.debug(TAG, "Keyframe number is " + _animation.getKeyFrameIndex(_frameTime));
         (drawable as TextureRegionDrawable).region = region
         super.act(delta)

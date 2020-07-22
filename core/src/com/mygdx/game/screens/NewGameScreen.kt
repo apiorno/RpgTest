@@ -7,84 +7,82 @@ import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.*
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.BludBourne
-import com.mygdx.game.BludBourne.ScreenType
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioObserver.AudioCommand
 import com.mygdx.game.audio.AudioObserver.AudioTypeEvent
 import com.mygdx.game.profile.ProfileManager
+import ktx.scene2d.*
 
-class NewGameScreen(private val _game: BludBourne) : GameScreen() {
-    private val _stage: Stage
-    private val _profileText: TextField
-    private val _overwriteDialog: Dialog
+class NewGameScreen(private val game: BludBourne) : GameScreen() {
+    private val stage: Stage = Stage()
+    private val profileText: TextField by lazy { TextField("", Utility.STATUSUI_SKIN, "inventory") }
+    private val overwriteDialog: Dialog by lazy { Dialog("Overwrite?", Utility.STATUSUI_SKIN, "solidbackground") }
+
     override fun render(delta: Float) {
         if (delta == 0f) {
             return
         }
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        _stage.act(delta)
-        _stage.draw()
+        stage.act(delta)
+        stage.draw()
     }
 
     override fun resize(width: Int, height: Int) {
-        _stage.viewport.setScreenSize(width, height)
+        stage.viewport.setScreenSize(width, height)
     }
 
     override fun show() {
-        _overwriteDialog.hide()
-        _profileText.text = ""
-        Gdx.input.inputProcessor = _stage
+        overwriteDialog.hide()
+        profileText.text = ""
+        Gdx.input.inputProcessor = stage
     }
 
     override fun hide() {
-        _overwriteDialog.hide()
-        _profileText.text = ""
+        overwriteDialog.hide()
+        profileText.text = ""
         Gdx.input.inputProcessor = null
     }
 
-    override fun pause() {}
-    override fun resume() {}
     override fun dispose() {
-        _stage.clear()
-        _stage.dispose()
+        stage.clear()
+        stage.dispose()
     }
 
-    init {
-
-        //create
-        _stage = Stage()
-        val profileName = Label("Enter Profile Name: ", Utility.STATUSUI_SKIN)
-        _profileText = TextField("", Utility.STATUSUI_SKIN, "inventory")
-        _profileText.maxLength = 20
-        _overwriteDialog = Dialog("Overwrite?", Utility.STATUSUI_SKIN, "solidbackground")
-        val overwriteLabel = Label("Overwrite existing profile name?", Utility.STATUSUI_SKIN)
+    fun addActorsToStage(){
         val cancelButton = TextButton("Cancel", Utility.STATUSUI_SKIN, "inventory")
         val overwriteButton = TextButton("Overwrite", Utility.STATUSUI_SKIN, "inventory")
-        _overwriteDialog.setKeepWithinStage(true)
-        _overwriteDialog.isModal = true
-        _overwriteDialog.isMovable = false
-        _overwriteDialog.text(overwriteLabel)
         val startButton = TextButton("Start", Utility.STATUSUI_SKIN)
         val backButton = TextButton("Back", Utility.STATUSUI_SKIN)
+        profileText.maxLength = 20
+
+
+        overwriteDialog.setKeepWithinStage(true)
+        overwriteDialog.isModal = true
+        overwriteDialog.isMovable = false
+        overwriteDialog.text(scene2d.label("Overwrite existing profile name?", defaultStyle, Utility.STATUSUI_SKIN))
 
         //Layout
-        _overwriteDialog.row()
-        _overwriteDialog.button(overwriteButton).bottom().left()
-        _overwriteDialog.button(cancelButton).bottom().right()
-        val topTable = Table()
-        topTable.setFillParent(true)
-        topTable.add(profileName).center()
-        topTable.add(_profileText).center()
-        val bottomTable = Table()
-        bottomTable.height = startButton.height
-        bottomTable.width = Gdx.graphics.width.toFloat()
-        bottomTable.center()
-        bottomTable.add(startButton).padRight(50f)
-        bottomTable.add(backButton)
-        _stage.addActor(topTable)
-        _stage.addActor(bottomTable)
+        overwriteDialog.row()
+        overwriteDialog.button(overwriteButton).bottom().left()
+        overwriteDialog.button(cancelButton).bottom().right()
 
+        stage.actors {
+            table {
+                setFillParent(true)
+                add(label("Enter Profile Name: ", defaultStyle,Utility.STATUSUI_SKIN)).center()
+                add(profileText).center()
+            }
+            table {
+                height = startButton.height
+                width = Gdx.graphics.width.toFloat()
+                center()
+                add(startButton).padRight(50f)
+                add(backButton)
+            }
+
+        }
         //Listeners
         cancelButton.addListener(object : ClickListener() {
             override fun touchDown(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -92,7 +90,7 @@ class NewGameScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _overwriteDialog.hide()
+                overwriteDialog.hide()
             }
         }
         )
@@ -102,13 +100,13 @@ class NewGameScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                val messageText = _profileText.text
-                ProfileManager.instance.writeProfileToStorage(messageText, "", true)
-                ProfileManager.instance.setCurrentProfile(messageText)
-                ProfileManager.instance.isNewProfile = true
-                _overwriteDialog.hide()
+                val messageText = profileText.text
+                ProfileManager.writeProfileToStorage(messageText, "", true)
+                ProfileManager.setCurrentProfile(messageText)
+                ProfileManager.isNewProfile = true
+                overwriteDialog.hide()
                 notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TITLE)
-                _game.screen = _game.getScreenType(ScreenType.MainGame)
+                game.changeScreenToType(ScreenType.MainGame)
             }
         }
         )
@@ -118,19 +116,18 @@ class NewGameScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                val messageText = _profileText.text
+                val messageText = profileText.text
                 //check to see if the current profile matches one that already exists
-                var exists = false
-                exists = ProfileManager.instance.doesProfileExist(messageText)
+                val exists: Boolean = ProfileManager.doesProfileExist(messageText)
                 if (exists) {
                     //Pop up dialog for Overwrite
-                    _overwriteDialog.show(_stage)
+                    overwriteDialog.show(stage)
                 } else {
-                    ProfileManager.instance.writeProfileToStorage(messageText, "", false)
-                    ProfileManager.instance.setCurrentProfile(messageText)
-                    ProfileManager.instance.isNewProfile = true
+                    ProfileManager.writeProfileToStorage(messageText, "", false)
+                    ProfileManager.setCurrentProfile(messageText)
+                    ProfileManager.isNewProfile = true
                     notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TITLE)
-                    _game.screen = _game.getScreenType(ScreenType.MainGame)
+                    game.changeScreenToType(ScreenType.MainGame)
                 }
             }
         }
@@ -141,9 +138,12 @@ class NewGameScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _game.screen = _game.getScreenType(ScreenType.MainMenu)
+                game.changeScreenToType(ScreenType.MainMenu)
             }
         }
         )
+    }
+    init {
+        addActorsToStage()
     }
 }

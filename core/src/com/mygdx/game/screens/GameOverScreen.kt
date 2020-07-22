@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Align
 import com.mygdx.game.BludBourne
-import com.mygdx.game.BludBourne.ScreenType
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioObserver.AudioCommand
 import com.mygdx.game.audio.AudioObserver.AudioTypeEvent
@@ -80,7 +80,7 @@ class GameOverScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _game.screen = _game.getScreenType(ScreenType.LoadGame)
+                _game.changeScreenToType(ScreenType.LoadGame)
             }
         }
         )
@@ -90,7 +90,7 @@ class GameOverScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _game.screen = _game.getScreenType(ScreenType.MainMenu)
+                _game.changeScreenToType(ScreenType.MainMenu)
             }
         }
         )

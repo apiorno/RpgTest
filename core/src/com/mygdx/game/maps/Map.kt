@@ -21,85 +21,73 @@ import com.mygdx.game.sfx.ParticleEffectFactory.ParticleEffectType
 import java.util.*
 
 abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) : AudioSubject {
-    private val _observers: Array<AudioObserver>
-    protected open lateinit var _json: Json
-    protected var _playerStartPositionRect: Vector2
-    protected var _closestPlayerStartPosition: Vector2
-    protected var _convertedUnits: Vector2
+    private val observers: Array<AudioObserver> = Array()
+    protected open var json: Json = Json()
+    private var playerStartPositionRect: Vector2
+    private var closestPlayerStartPosition: Vector2
+    private var convertedUnits: Vector2
     var currentTiledMap: TiledMap? = null
-        protected set
     var playerStart: Vector2
-    protected lateinit var _npcStartPositions: Array<Vector2>
-    protected lateinit var _specialNPCStartPositions: Hashtable<String, Vector2>
+    protected lateinit var npcStartPositions: Array<Vector2>
+    protected lateinit var specialNPCStartPositions: Hashtable<String, Vector2>
     var collisionLayer: MapLayer? = null
-        protected set
     var portalLayer: MapLayer? = null
-        protected set
-    protected var _spawnsLayer: MapLayer? = null
-    var questItemSpawnLayer: MapLayer? = null
-        protected set
+    private var spawnsLayer: MapLayer? = null
+    private var questItemSpawnLayer: MapLayer? = null
     var questDiscoverLayer: MapLayer? = null
-        protected set
     var enemySpawnLayer: MapLayer? = null
-        protected set
-     var _particleEffectSpawnLayer: MapLayer? = null
+    private var particleEffectSpawnLayer: MapLayer? = null
     var lightMapDawnLayer: MapLayer? = null
-        protected set
     var lightMapAfternoonLayer: MapLayer? = null
-        protected set
     var lightMapDuskLayer: MapLayer? = null
-        protected set
     var lightMapNightLayer: MapLayer? = null
-        protected set
-    var currentMapType: MapType
-    var mapEntities: Array<Entity>
-        protected set
-    var mapQuestEntities: Array<Entity?>
-        protected set
-    var mapParticleEffects: Array<ParticleEffect>
-        protected set
+    var currentMapType: MapType = mapType
+    var mapEntities: Array<Entity> = Array(10)
+    var mapQuestEntities: Array<Entity> = Array()
+    var mapParticleEffects: Array<ParticleEffect> = Array()
 
     fun getParticleEffectSpawnPositions(particleEffectType: ParticleEffectType): Array<Vector2> {
         val positions = Array<Vector2>()
-        for (`object` in _particleEffectSpawnLayer!!.objects) {
-            val name = `object`.name
-            if (name == null || name.isEmpty() ||
-                    !name.equals(particleEffectType.toString(), ignoreCase = true)) {
-                continue
-            }
-            val rect = (`object` as RectangleMapObject).rectangle
-            //Get center of rectangle
-            var x = rect.getX() + rect.getWidth() / 2
-            var y = rect.getY() + rect.getHeight() / 2
+        particleEffectSpawnLayer!!.objects.forEach{
+            val name = it.name
+            if (name != null && name.isNotEmpty() &&
+                    name.equals(particleEffectType.toString(), ignoreCase = true)) {
+                val rect = (it as RectangleMapObject).rectangle
+                //Get center of rectangle
+                var x = rect.getX() + rect.getWidth() / 2
+                var y = rect.getY() + rect.getHeight() / 2
 
-            //scale by the unit to convert from map coordinates
-            x *= UNIT_SCALE
-            y *= UNIT_SCALE
-            positions.add(Vector2(x, y))
+                //scale by the unit to convert from map coordinates
+                x *= UNIT_SCALE
+                y *= UNIT_SCALE
+                positions.add(Vector2(x, y))
+            }
+
         }
+
         return positions
     }
 
     fun getQuestItemSpawnPositions(objectName: String?, objectTaskID: String?): Array<Vector2> {
         val positions = Array<Vector2>()
-        for (`object` in questItemSpawnLayer!!.objects) {
-            val name = `object`.name
-            val taskID = `object`.properties["taskID"] as String?
-            if (name == null || taskID == null ||
-                    name.isEmpty() || taskID.isEmpty() ||
-                    !name.equals(objectName, ignoreCase = true) ||
-                    !taskID.equals(objectTaskID, ignoreCase = true)) {
-                continue
-            }
-            //Get center of rectangle
-            var x = (`object` as RectangleMapObject).rectangle.getX()
-            var y = `object`.rectangle.getY()
+        questItemSpawnLayer!!.objects.forEach {
+            val name = it.name
+            val taskID = it.properties["taskID"] as String?
+            if (name != null && taskID != null &&
+                    name.isNotEmpty() && taskID.isNotEmpty() &&
+                    name.equals(objectName, ignoreCase = true) &&
+                    taskID.equals(objectTaskID, ignoreCase = true)) {
+                //Get center of rectangle
+                var x = (it as RectangleMapObject).rectangle.getX()
+                var y = it.rectangle.getY()
 
-            //scale by the unit to convert from map coordinates
-            x *= UNIT_SCALE
-            y *= UNIT_SCALE
-            positions.add(Vector2(x, y))
+                //scale by the unit to convert from map coordinates
+                x *= UNIT_SCALE
+                y *= UNIT_SCALE
+                positions.add(Vector2(x, y))
+            }
         }
+
         return positions
     }
 
@@ -108,32 +96,22 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
     }
 
     fun updateMapEntities(mapMgr: MapManager, batch: Batch, delta: Float) {
-        for (i in 0 until mapEntities.size) {
-            mapEntities[i].update(mapMgr, batch, delta)
-        }
-        for (i in 0 until mapQuestEntities.size) {
-            mapQuestEntities[i]!!.update(mapMgr, batch, delta)
-        }
+        mapEntities.forEach { it.update(mapMgr, batch, delta) }
+        mapQuestEntities.forEach { it.update(mapMgr, batch, delta) }
     }
 
     fun updateMapEffects(mapMgr: MapManager?, batch: Batch, delta: Float) {
-        for (i in 0 until mapParticleEffects.size) {
+        mapParticleEffects.forEach {
             batch.begin()
-            mapParticleEffects[i].draw(batch, delta)
+            it.draw(batch,delta)
             batch.end()
         }
     }
 
     fun dispose() {
-        for (i in 0 until mapEntities.size) {
-            mapEntities[i].dispose()
-        }
-        for (i in 0 until mapQuestEntities.size) {
-            mapQuestEntities[i]!!.dispose()
-        }
-        for (i in 0 until mapParticleEffects.size) {
-            mapParticleEffects[i].dispose()
-        }
+        mapEntities.forEach { it.dispose() }
+        mapQuestEntities.forEach { it.dispose() }
+        mapParticleEffects.forEach { it.dispose() }
     }
 
     val playerStartUnitScaled: Vector2
@@ -146,24 +124,24 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
     //Get center of rectangle
 
     //scale by the unit to convert from map coordinates
-    private val nPCStartPositions: Array<Vector2>
+    private val initializeNpcStartPositions: Array<Vector2>
         get() {
             val npcStartPositions = Array<Vector2>()
-            for (`object` in _spawnsLayer!!.objects) {
-                val objectName = `object`.name
-                if (objectName == null || objectName.isEmpty()) {
-                    continue
-                }
-                if (objectName.equals(NPC_START, ignoreCase = true)) {
-                    //Get center of rectangle
-                    var x = (`object` as RectangleMapObject).rectangle.getX()
-                    var y = `object`.rectangle.getY()
+            spawnsLayer!!.objects.forEach {
+                val objectName = it.name
+                if (objectName != null && objectName.isNotEmpty()) {
+                    if (objectName.equals(NPC_START, ignoreCase = true)) {
+                        //Get center of rectangle
+                        var x = (it as RectangleMapObject).rectangle.getX()
+                        var y = it.rectangle.getY()
 
-                    //scale by the unit to convert from map coordinates
-                    x *= UNIT_SCALE
-                    y *= UNIT_SCALE
-                    npcStartPositions.add(Vector2(x, y))
+                        //scale by the unit to convert from map coordinates
+                        x *= UNIT_SCALE
+                        y *= UNIT_SCALE
+                        npcStartPositions.add(Vector2(x, y))
+                    }
                 }
+
             }
             return npcStartPositions
         }
@@ -173,29 +151,24 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
     //Get center of rectangle
 
     //scale by the unit to convert from map coordinates
-    private val specialNPCStartPositions: Hashtable<String, Vector2>
+    private val initializeSpecialNPCStartPositions: Hashtable<String, Vector2>
         get() {
             val specialNPCStartPositions = Hashtable<String, Vector2>()
-            for (`object` in _spawnsLayer!!.objects) {
-                val objectName = `object`.name
-                if (objectName == null || objectName.isEmpty()) {
-                    continue
-                }
-
+            spawnsLayer!!.objects.forEach {
+                val objectName = it.name
                 //This is meant for all the special spawn locations, a catch all, so ignore known ones
-                if (objectName.equals(NPC_START, ignoreCase = true) ||
-                        objectName.equals(PLAYER_START, ignoreCase = true)) {
-                    continue
+                if (objectName != null && objectName.isNotEmpty() && !objectName.equals(NPC_START, ignoreCase = true) &&
+                        !objectName.equals(PLAYER_START, ignoreCase = true)) {
+
+                    //Get center of rectangle
+                    var x = (it as RectangleMapObject).rectangle.getX()
+                    var y = it.rectangle.getY()
+
+                    //scale by the unit to convert from map coordinates
+                    x *= UNIT_SCALE
+                    y *= UNIT_SCALE
+                    specialNPCStartPositions[objectName] = Vector2(x, y)
                 }
-
-                //Get center of rectangle
-                var x = (`object` as RectangleMapObject).rectangle.getX()
-                var y = `object`.rectangle.getY()
-
-                //scale by the unit to convert from map coordinates
-                x *= UNIT_SCALE
-                y *= UNIT_SCALE
-                specialNPCStartPositions[objectName] = Vector2(x, y)
             }
             return specialNPCStartPositions
         }
@@ -204,54 +177,48 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
         Gdx.app.debug(TAG, "setClosestStartPosition INPUT: (" + position.x + "," + position.y + ") " + currentMapType.toString())
 
         //Get last known position on this map
-        _playerStartPositionRect[0f] = 0f
-        _closestPlayerStartPosition[0f] = 0f
+        playerStartPositionRect[0f] = 0f
+        closestPlayerStartPosition[0f] = 0f
         var shortestDistance = 0f
 
         //Go through all player start positions and choose closest to last known position
-        for (`object` in _spawnsLayer!!.objects) {
-            val objectName = `object`.name
-            if (objectName == null || objectName.isEmpty()) {
-                continue
-            }
-            if (objectName.equals(PLAYER_START, ignoreCase = true)) {
-                (`object` as RectangleMapObject).rectangle.getPosition(_playerStartPositionRect)
-                val distance = position.dst2(_playerStartPositionRect)
+        spawnsLayer!!.objects.forEach {
+            val objectName = it.name
+            if (objectName != null && objectName.isNotEmpty() && objectName.equals(PLAYER_START, ignoreCase = true)) {
+                (it as RectangleMapObject).rectangle.getPosition(playerStartPositionRect)
+                val distance = position.dst2(playerStartPositionRect)
                 Gdx.app.debug(TAG, "DISTANCE: $distance for $currentMapType")
                 if (distance < shortestDistance || shortestDistance == 0f) {
-                    _closestPlayerStartPosition.set(_playerStartPositionRect)
+                    closestPlayerStartPosition.set(playerStartPositionRect)
                     shortestDistance = distance
-                    Gdx.app.debug(TAG, "closest START is: (" + _closestPlayerStartPosition.x + "," + _closestPlayerStartPosition.y + ") " + currentMapType.toString())
+                    Gdx.app.debug(TAG, "closest START is: (" + closestPlayerStartPosition.x + "," + closestPlayerStartPosition.y + ") " + currentMapType.toString())
                 }
             }
         }
-        playerStart = _closestPlayerStartPosition.cpy()
+        playerStart = closestPlayerStartPosition.cpy()
     }
 
     fun setClosestStartPositionFromScaledUnits(position: Vector2) {
-        if (UNIT_SCALE <= 0) return
-        _convertedUnits[position.x / UNIT_SCALE] = position.y / UNIT_SCALE
-        setClosestStartPosition(_convertedUnits)
+        convertedUnits[position.x / UNIT_SCALE] = position.y / UNIT_SCALE
+        setClosestStartPosition(convertedUnits)
     }
 
     abstract fun unloadMusic()
     abstract fun loadMusic()
     override fun addObserver(audioObserver: AudioObserver) {
-        _observers.add(audioObserver)
+        observers.add(audioObserver)
     }
 
     override fun removeObserver(audioObserver: AudioObserver) {
-        _observers.removeValue(audioObserver, true)
+        observers.removeValue(audioObserver, true)
     }
 
     override fun removeAllObservers() {
-        _observers.removeAll(_observers, true)
+        observers.removeAll(observers, true)
     }
 
     override fun notify(command: AudioCommand, event: AudioTypeEvent) {
-        for (observer in _observers) {
-            observer.onNotify(command, event)
-        }
+        observers.forEach { it.onNotify(command, event) }
     }
 
     companion object {
@@ -280,16 +247,10 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
     }
 
     init {
-        _json = Json()
-        mapEntities = Array(10)
-        _observers = Array()
-        mapQuestEntities = Array()
-        mapParticleEffects = Array()
-        currentMapType = mapType
         playerStart = Vector2(0F, 0F)
-        _playerStartPositionRect = Vector2(0F, 0F)
-        _closestPlayerStartPosition = Vector2(0F, 0F)
-        _convertedUnits = Vector2(0F, 0F)
+        playerStartPositionRect = Vector2(0F, 0F)
+        closestPlayerStartPosition = Vector2(0F, 0F)
+        convertedUnits = Vector2(0F, 0F)
         run {
             if (fullMapPath == null || fullMapPath.isEmpty()) {
                 Gdx.app.debug(TAG, "Map is invalid")
@@ -310,8 +271,8 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
             if (portalLayer == null) {
                 Gdx.app.debug(TAG, "No portal layer!")
             }
-            _spawnsLayer = currentTiledMap!!.layers[SPAWNS_LAYER]
-            if (_spawnsLayer == null) {
+            spawnsLayer = currentTiledMap!!.layers[SPAWNS_LAYER]
+            if (spawnsLayer == null) {
                 Gdx.app.debug(TAG, "No spawn layer!")
             } else {
                 setClosestStartPosition(playerStart)
@@ -344,15 +305,15 @@ abstract class Map internal constructor(mapType: MapType, fullMapPath: String?) 
             if (lightMapNightLayer == null) {
                 Gdx.app.debug(TAG, "No night lightmap layer found!")
             }
-            _particleEffectSpawnLayer = currentTiledMap!!.layers[PARTICLE_EFFECT_SPAWN_LAYER]
-            if (_particleEffectSpawnLayer == null) {
+            particleEffectSpawnLayer = currentTiledMap!!.layers[PARTICLE_EFFECT_SPAWN_LAYER]
+            if (particleEffectSpawnLayer == null) {
                 Gdx.app.debug(TAG, "No particle effect spawn layer!")
             }
-            _npcStartPositions = nPCStartPositions
-            _specialNPCStartPositions = specialNPCStartPositions
+            npcStartPositions = initializeNpcStartPositions
+            specialNPCStartPositions = initializeSpecialNPCStartPositions
 
             //Observers
-            addObserver(AudioManager.instance)
+            addObserver(AudioManager)
         }
     }
 }

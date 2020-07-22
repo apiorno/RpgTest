@@ -2,7 +2,6 @@ package com.mygdx.game.quest
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
-import com.badlogic.gdx.utils.Array
 import com.badlogic.gdx.utils.Json
 import com.mygdx.game.ecs.Entity
 import com.mygdx.game.ecs.EntityConfig
@@ -10,56 +9,49 @@ import com.mygdx.game.maps.MapManager
 import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.quest.QuestTask.QuestTaskPropertyType
 import com.mygdx.game.quest.QuestTask.QuestType
+import ktx.collections.GdxArray
 import java.util.*
+import kotlin.collections.ArrayList
 
 class QuestGraph {
-    private var questTasks: Hashtable<String, QuestTask>? = null
-    private var questTaskDependencies: Hashtable<String, ArrayList<QuestTaskDependency>>? = null
-    var questTitle: String? = null
-    var questID: String? = null
+
+    private lateinit var questTasks: Hashtable<String, QuestTask>
+    private lateinit var questTaskDependencies: Hashtable<String, ArrayList<QuestTaskDependency>>
+    private lateinit var questTitle: String
+    lateinit var questID: String
     var isQuestComplete = false
     var goldReward = 0
     var xpReward = 0
 
     fun areAllTasksComplete(): Boolean {
-        val tasks = allQuestTasks
-        for (task in tasks) {
-            if (!task.isTaskComplete) {
-                return false
-            }
-        }
-        return true
+        return allQuestTasks.all { it.isTaskComplete }
+
     }
 
     fun setTasks(questTasks: Hashtable<String, QuestTask>) {
-        require(questTasks.size >= 0) { "Can't have a negative amount of conversations" }
         this.questTasks = questTasks
-        questTaskDependencies = Hashtable<String, ArrayList<QuestTaskDependency>>(questTasks.size)
-        for (questTask in questTasks.values) {
-            questTaskDependencies!![questTask?.id] = ArrayList()
-        }
+        questTaskDependencies = Hashtable(questTasks.size)
+        questTasks.values.forEach { questTaskDependencies[it.id] = ArrayList() }
     }
 
-    val allQuestTasks: ArrayList<QuestTask>
+    val allQuestTasks: Array<QuestTask>
         get() {
-            val enumeration = questTasks!!.elements()
-            return Collections.list(enumeration)
+            return questTasks.values.toTypedArray()
         }
 
     fun clear() {
-        questTasks!!.clear()
-        questTaskDependencies!!.clear()
+        questTasks.clear()
+        questTaskDependencies.clear()
     }
 
-    fun isValid(taskID: String?): Boolean {
-        val questTask = questTasks!![taskID] ?: return false
-        return true
+    private fun isValid(taskID: String?): Boolean {
+        return questTasks[taskID] != null
     }
 
     fun isReachable(sourceID: String?, sinkID: String?): Boolean {
         if (!isValid(sourceID) || !isValid(sinkID)) return false
-        if (questTasks!![sourceID] == null) return false
-        val list = questTaskDependencies!![sourceID] ?: return false
+        if (questTasks[sourceID] == null) return false
+        val list = questTaskDependencies[sourceID] ?: return false
         for (dependency in list) {
             if (dependency.sourceId.equals(sourceID, ignoreCase = true) &&
                     dependency.destinationId.equals(sinkID, ignoreCase = true)) {
@@ -69,15 +61,15 @@ class QuestGraph {
         return false
     }
 
-    fun getQuestTaskByID(id: String?): QuestTask? {
+    private fun getQuestTaskByID(id: String?): QuestTask? {
         return if (!isValid(id)) {
             //System.out.println("Id " + id + " is not valid!");
             null
-        } else questTasks!![id]
+        } else questTasks[id]
     }
 
     fun addDependency(questTaskDependency: QuestTaskDependency) {
-        val list = questTaskDependencies!![questTaskDependency.sourceId] ?: return
+        val list = questTaskDependencies[questTaskDependency.sourceId] ?: return
 
         //Will not add if creates cycles
         if (doesCycleExist(questTaskDependency)) {
@@ -87,8 +79,8 @@ class QuestGraph {
         list.add(questTaskDependency)
     }
 
-    fun doesCycleExist(questTaskDep: QuestTaskDependency): Boolean {
-        val keys: Set<String?> = questTasks!!.keys
+    private fun doesCycleExist(questTaskDep: QuestTaskDependency): Boolean {
+        val keys: Set<String?> = questTasks.keys
         for (id in keys) {
             if (doesQuestTaskHaveDependencies(id) &&
                     questTaskDep.destinationId.equals(id, ignoreCase = true)) {
@@ -99,9 +91,9 @@ class QuestGraph {
         return false
     }
 
-    fun doesQuestTaskHaveDependencies(id: String?): Boolean {
-        val task = getQuestTaskByID(id) ?: return false
-        val list = questTaskDependencies!![id]!!
+    private fun doesQuestTaskHaveDependencies(id: String?): Boolean {
+        getQuestTaskByID(id) ?: return false
+        val list = questTaskDependencies[id]!!
         return !(list.isEmpty() || list.size == 0)
     }
 
@@ -128,8 +120,8 @@ class QuestGraph {
     }
 
     fun isQuestTaskAvailable(id: String?): Boolean {
-        val task = getQuestTaskByID(id) ?: return false
-        val list = questTaskDependencies!![id]!!
+        getQuestTaskByID(id) ?: return false
+        val list = questTaskDependencies[id]!!
         for (dep in list) {
             val depTask = getQuestTaskByID(dep.destinationId)
             if (depTask == null || depTask.isTaskComplete) continue
@@ -161,7 +153,7 @@ class QuestGraph {
                     val taskConfig = questTask.getPropertyValue(QuestTaskPropertyType.TARGET_TYPE.toString())
                     if (taskConfig == null || taskConfig.isEmpty()) break@loop
                     val config: EntityConfig = Entity.getEntityConfig(taskConfig)
-                    val questItemPositions = ProfileManager.instance.getProperty(config.entityID!!, Array::class.java) as Array<Vector2>?
+                    val questItemPositions = ProfileManager.getProperty(config.entityID!!, GdxArray::class.java) as GdxArray<Vector2>?
                             ?: break@loop
 
                     //Case where all the items have been picked up
@@ -200,29 +192,23 @@ class QuestGraph {
                     !taskLocation.equals(mapMgr.currentMapType.toString(), ignoreCase = true)) continue
             when (questTask.questType) {
                 QuestType.FETCH -> {
-                    val questEntities = Array<Entity?>()
+                    val questEntities = GdxArray<Entity?>()
                     val positions = mapMgr.getQuestItemSpawnPositions(questID, questTask.id)
                     val taskConfig = questTask.getPropertyValue(QuestTaskPropertyType.TARGET_TYPE.toString())
                     if (taskConfig == null || taskConfig.isEmpty()) break@loop
                     val config: EntityConfig = Entity.getEntityConfig(taskConfig)
-                    var questItemPositions: Array<Vector2?>? = ProfileManager.instance.getProperty(config.entityID!!, Array::class.java) as Array<Vector2?>?
+                    var questItemPositions: GdxArray<Vector2?>? = ProfileManager.getProperty(config.entityID!!, GdxArray::class.java) as GdxArray<Vector2?>?
                     if (questItemPositions == null) {
-                        questItemPositions = Array()
-                        for (position in positions!!) {
-                            questItemPositions.add(position)
-                            val entity = Entity.initEntity(config, position)
-                            entity!!.entityConfig!!.currentQuestID = questID
-                            questEntities.add(entity)
-                        }
-                    } else {
-                        for (questItemPosition in questItemPositions) {
-                            val entity = Entity.initEntity(config, questItemPosition)
-                            entity!!.entityConfig!!.currentQuestID = questID
-                            questEntities.add(entity)
-                        }
+                        questItemPositions = GdxArray()
+                    }
+                    positions.forEach {
+                        questItemPositions.add(it)
+                        val entity = Entity.initEntity(config, it)
+                        entity!!.entityConfig!!.currentQuestID = questID
+                        questEntities.add(entity)
                     }
                     mapMgr.addMapQuestEntities(questEntities)
-                    ProfileManager.instance.setProperty(config.entityID!!, questItemPositions)
+                    ProfileManager.setProperty(config.entityID!!, questItemPositions)
                 }
                 QuestType.KILL -> {
                 }
@@ -241,7 +227,7 @@ class QuestGraph {
     }
 
     override fun toString(): String {
-        return questTitle!!
+        return questTitle
     }
 
     fun toJson(): String {

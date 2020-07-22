@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Align
 import com.mygdx.game.BludBourne
-import com.mygdx.game.BludBourne.ScreenType
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.Utility
 
 class CreditScreen(private val _game: BludBourne) : GameScreen() {
@@ -74,7 +74,7 @@ class CreditScreen(private val _game: BludBourne) : GameScreen() {
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
                 _scrollPane!!.scrollY = 0f
                 _scrollPane!!.updateVisualScroll()
-                _game.screen = _game.getScreenType(ScreenType.MainMenu)
+                _game.changeScreenToType(ScreenType.MainMenu)
             }
         }
         )

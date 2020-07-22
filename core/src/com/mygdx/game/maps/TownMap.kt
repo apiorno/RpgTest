@@ -15,8 +15,8 @@ import com.mygdx.game.profile.ProfileManager
 import com.mygdx.game.sfx.ParticleEffectFactory
 import com.mygdx.game.sfx.ParticleEffectFactory.ParticleEffectType
 
-class TownMap internal constructor() : Map(MapType.TOWN, _mapPath) {
-     override var _json: Json = Json()
+class TownMap internal constructor() : Map(MapType.TOWN, mapPath) {
+     override var json: Json = Json()
     override fun unloadMusic() {
         notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TOWN)
     }
@@ -26,15 +26,15 @@ class TownMap internal constructor() : Map(MapType.TOWN, _mapPath) {
         notify(AudioCommand.MUSIC_PLAY_LOOP, AudioTypeEvent.MUSIC_TOWN)
     }
 
-    private fun initSpecialEntityPosition(entity: Entity?) {
-        var position: Vector2? = Vector2(0F, 0F)
-        if (_specialNPCStartPositions.containsKey(entity!!.entityConfig!!.entityID)) {
-            position = _specialNPCStartPositions[entity.entityConfig!!.entityID]
+    private fun initSpecialEntityPosition(entity: Entity) {
+        var position = Vector2(0F, 0F)
+        if (specialNPCStartPositions.containsKey(entity.entityConfig!!.entityID)) {
+            position = specialNPCStartPositions[entity.entityConfig!!.entityID]!!
         }
-        entity.sendMessage(MESSAGE.INIT_START_POSITION, _json.toJson(position))
+        entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(position))
 
         //Overwrite default if special config is found
-        val entityConfig = ProfileManager.instance.getProperty(entity.entityConfig!!.entityID!!, EntityConfig::class.java)
+        val entityConfig = ProfileManager.getProperty(entity.entityConfig!!.entityID!!, EntityConfig::class.java)
         if (entityConfig != null) {
             entity.entityConfig = entityConfig
         }
@@ -42,13 +42,13 @@ class TownMap internal constructor() : Map(MapType.TOWN, _mapPath) {
 
     companion object {
         private val TAG = PlayerPhysicsComponent::class.java.simpleName
-        private const val _mapPath = "maps/town.tmx"
+        private const val mapPath = "maps/town.tmx"
     }
 
     init {
-        for (position in _npcStartPositions) {
+        npcStartPositions.forEach {
             val entity: Entity = EntityFactory.instance!!.getEntityByName(EntityName.TOWN_GUARD_WALKING)!!
-            entity.sendMessage(MESSAGE.INIT_START_POSITION, _json.toJson(position))
+            entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(it))
             mapEntities.add(entity)
         }
 
@@ -108,12 +108,8 @@ class TownMap internal constructor() : Map(MapType.TOWN, _mapPath) {
         initSpecialEntityPosition(townfolk15)
         mapEntities.add(townfolk15)
         val candleEffectPositions = getParticleEffectSpawnPositions(ParticleEffectType.CANDLE_FIRE)
-        for (position in candleEffectPositions) {
-            mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.CANDLE_FIRE, position))
-        }
+        candleEffectPositions.forEach { mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.CANDLE_FIRE, it)) }
         val lanternEffectPositions = getParticleEffectSpawnPositions(ParticleEffectType.LANTERN_FIRE)
-        for (position in lanternEffectPositions) {
-            mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.LANTERN_FIRE, position))
-        }
+        lanternEffectPositions.forEach { mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.LANTERN_FIRE, it)) }
     }
 }

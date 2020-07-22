@@ -4,29 +4,29 @@ import java.util.*
 
 object MapFactory {
     //All maps for the game
-    private val _mapTable = Hashtable<MapType, Map>()
+    private val mapTable = Hashtable<MapType, Map>()
     fun getMap(mapType: MapType?): Map? {
         var map: Map? = null
         when (mapType) {
             MapType.TOP_WORLD -> {
-                map = _mapTable[MapType.TOP_WORLD]
+                map = mapTable[MapType.TOP_WORLD]
                 if (map == null) {
                     map = TopWorldMap()
-                    _mapTable[MapType.TOP_WORLD] = map
+                    mapTable[MapType.TOP_WORLD] = map
                 }
             }
             MapType.TOWN -> {
-                map = _mapTable[MapType.TOWN]
+                map = mapTable[MapType.TOWN]
                 if (map == null) {
                     map = TownMap()
-                    _mapTable[MapType.TOWN] = map
+                    mapTable[MapType.TOWN] = map
                 }
             }
             MapType.CASTLE_OF_DOOM -> {
-                map = _mapTable[MapType.CASTLE_OF_DOOM]
+                map = mapTable[MapType.CASTLE_OF_DOOM]
                 if (map == null) {
                     map = CastleDoomMap()
-                    _mapTable[MapType.CASTLE_OF_DOOM] = map
+                    mapTable[MapType.CASTLE_OF_DOOM] = map
                 }
             }
             else -> {
@@ -35,12 +35,9 @@ object MapFactory {
         return map
     }
 
-    @kotlin.jvm.JvmStatic
     fun clearCache() {
-        for (map in _mapTable.values) {
-            map.dispose()
-        }
-        _mapTable.clear()
+        mapTable.values.forEach { it.dispose() }
+        mapTable.clear()
     }
 
     enum class MapType {

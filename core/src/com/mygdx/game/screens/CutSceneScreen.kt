@@ -14,7 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.badlogic.gdx.utils.viewport.Viewport
 import com.mygdx.game.*
-import com.mygdx.game.BludBourne.ScreenType
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.ecs.EntityFactory.Companion.instance
 import com.mygdx.game.ecs.EntityFactory.EntityName
 import com.mygdx.game.maps.Map
@@ -130,7 +130,7 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
     }
 
     private fun getAnimatedImage(entityName: MonsterEntityType): AnimatedImage {
-        val entity = MonsterFactory.instance.getMonster(entityName)
+        val entity = MonsterFactory.getMonster(entityName)
         return setEntityAnimation(entity)
     }
 
@@ -187,7 +187,7 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
         _stage.addAction(_introCutSceneAction)
         notify(AudioCommand.MUSIC_STOP_ALL, AudioTypeEvent.NONE)
         notify(AudioCommand.MUSIC_PLAY_LOOP, AudioTypeEvent.MUSIC_INTRO_CUTSCENE)
-        ProfileManager.instance.removeAllObservers()
+        ProfileManager.removeAllObservers()
         if (_mapRenderer == null) {
             _mapRenderer = OrthogonalTiledMapRenderer(_mapMgr.currentTiledMap, Map.UNIT_SCALE)
         }
@@ -195,7 +195,7 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
 
     override fun hide() {
         notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_INTRO_CUTSCENE)
-        ProfileManager.instance.removeAllObservers()
+        ProfileManager.removeAllObservers()
         Gdx.input.inputProcessor = null
     }
 
@@ -223,14 +223,14 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
         //Actions
         _switchScreenAction = object : RunnableAction() {
             override fun run() {
-                _game.screen = _game.getScreenType(ScreenType.MainMenu)
+                _game.changeScreenToType(ScreenType.MainMenu)
             }
         }
         _setupScene01 = object : RunnableAction() {
             override fun run() {
                 hideMessage()
                 _mapMgr.loadMap(MapFactory.MapType.TOWN)
-                _mapMgr.disableCurrentmapMusic()
+                _mapMgr.disableCurrentMapMusic()
                 setCameraPosition(10f, 16f)
                 _animBlackSmith.isVisible = true
                 _animInnKeeper.isVisible = true
@@ -246,7 +246,7 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
             override fun run() {
                 hideMessage()
                 _mapMgr.loadMap(MapFactory.MapType.TOP_WORLD)
-                _mapMgr.disableCurrentmapMusic()
+                _mapMgr.disableCurrentMapMusic()
                 setCameraPosition(50f, 30f)
                 _animBlackSmith.setPosition(50f, 30f)
                 _animInnKeeper.setPosition(52f, 30f)
@@ -270,7 +270,7 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
                 _animMage.isVisible = false
                 _animFire.isVisible = false
                 _mapMgr.loadMap(MapFactory.MapType.TOP_WORLD)
-                _mapMgr.disableCurrentmapMusic()
+                _mapMgr.disableCurrentMapMusic()
                 _animDemon.isVisible = true
                 _animDemon.setScale(1f, 1f)
                 _animDemon.setSize(16 * Map.UNIT_SCALE, 16 * Map.UNIT_SCALE)
@@ -286,7 +286,7 @@ class CutSceneScreen(private val _game: BludBourne) : MainGameScreen(_game) {
                 _animMage.isVisible = false
                 _animFire.isVisible = false
                 _mapMgr.loadMap(MapFactory.MapType.CASTLE_OF_DOOM)
-                _mapMgr.disableCurrentmapMusic()
+                _mapMgr.disableCurrentMapMusic()
                 followActor(_animDemon)
                 _animDemon.isVisible = true
                 _animDemon.setPosition(15f, 1f)

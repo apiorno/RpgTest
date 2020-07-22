@@ -5,8 +5,17 @@ import com.badlogic.gdx.utils.Json
 import com.mygdx.game.ecs.Component.MESSAGE
 import java.util.*
 
-class EntityFactory private constructor() {
-    private val _entities: Hashtable<String?, EntityConfig>
+object EntityFactory{
+    private val TAG = EntityFactory::class.java.simpleName
+    private val json = Json()
+    private const val PLAYER_CONFIG = "scripts/player.json"
+    private const val TOWN_GUARD_WALKING_CONFIG = "scripts/town_guard_walking.json"
+    private const val TOWN_BLACKSMITH_CONFIG = "scripts/town_blacksmith.json"
+    private const val TOWN_MAGE_CONFIG = "scripts/town_mage.json"
+    private const val TOWN_INNKEEPER_CONFIG = "scripts/town_innkeeper.json"
+    private const val TOWN_FOLK_CONFIGS = "scripts/town_folk.json"
+    private const val ENVIRONMENTAL_ENTITY_CONFIGS = "scripts/environmental_entities.json"
+    private val entities: Hashtable<String?, EntityConfig> = Hashtable()
 
     enum class EntityType {
         PLAYER, PLAYER_DEMO, NPC
@@ -17,67 +26,40 @@ class EntityFactory private constructor() {
     }
 
     fun getEntityByName(entityName: EntityName): Entity? {
-        val config = EntityConfig(_entities[entityName.toString()])
-        return Entity.Companion.initEntity(config)
+        val config = entities[entityName.toString()]?.let { EntityConfig(it) }
+        return config?.let { Entity.initEntity(it) }
     }
 
-    companion object {
-        private val TAG = EntityFactory::class.java.simpleName
-        private val _json = Json()
-        private var _instance: EntityFactory? = null
-        var PLAYER_CONFIG = "scripts/player.json"
-        var TOWN_GUARD_WALKING_CONFIG = "scripts/town_guard_walking.json"
-        var TOWN_BLACKSMITH_CONFIG = "scripts/town_blacksmith.json"
-        var TOWN_MAGE_CONFIG = "scripts/town_mage.json"
-        var TOWN_INNKEEPER_CONFIG = "scripts/town_innkeeper.json"
-        var TOWN_FOLK_CONFIGS = "scripts/town_folk.json"
-        var ENVIRONMENTAL_ENTITY_CONFIGS = "scripts/environmental_entities.json"
-        @kotlin.jvm.JvmStatic
-        val instance: EntityFactory?
-            get() {
-                if (_instance == null) {
-                    _instance = EntityFactory()
-                }
-                return _instance
+    fun getEntity(entityType: EntityType?): Entity? {
+        val entity: Entity?
+        return when (entityType) {
+            EntityType.PLAYER -> {
+                entity = Entity(PlayerInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())
+                entity.entityConfig = Entity.getEntityConfig(PLAYER_CONFIG)
+                entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
+                entity
             }
-
-        @kotlin.jvm.JvmStatic
-        fun getEntity(entityType: EntityType?): Entity? {
-            var entity: Entity?
-            return when (entityType) {
-                EntityType.PLAYER -> {
-                    entity = Entity(PlayerInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())
-                    entity.entityConfig = Entity.Companion.getEntityConfig(PLAYER_CONFIG)
-                    entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, _json.toJson(entity.entityConfig))
-                    entity
-                }
-                EntityType.PLAYER_DEMO -> {
-                    entity = Entity(NPCInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())
-                    entity
-                }
-                EntityType.NPC -> {
-                    entity = Entity(NPCInputComponent(), NPCPhysicsComponent(), NPCGraphicsComponent())
-                    entity
-                }
-                else -> null
+            EntityType.PLAYER_DEMO -> {
+                entity = Entity(NPCInputComponent(), PlayerPhysicsComponent(), PlayerGraphicsComponent())
+                entity
             }
+            EntityType.NPC -> {
+                entity = Entity(NPCInputComponent(), NPCPhysicsComponent(), NPCGraphicsComponent())
+                entity
+            }
+            else -> null
         }
     }
 
     init {
-        _entities = Hashtable()
-        val townFolkConfigs: Array<EntityConfig> = Entity.Companion.getEntityConfigs(TOWN_FOLK_CONFIGS)
-        for (config in townFolkConfigs) {
-            _entities[config.entityID] = config
-        }
-        val environmentalEntityConfigs: Array<EntityConfig> = Entity.Companion.getEntityConfigs(ENVIRONMENTAL_ENTITY_CONFIGS)
-        for (config in environmentalEntityConfigs) {
-            _entities[config.entityID] = config
-        }
-        _entities[EntityName.TOWN_GUARD_WALKING.toString()] = Entity.Companion.loadEntityConfigByPath(TOWN_GUARD_WALKING_CONFIG)
-        _entities[EntityName.TOWN_BLACKSMITH.toString()] = Entity.Companion.loadEntityConfigByPath(TOWN_BLACKSMITH_CONFIG)
-        _entities[EntityName.TOWN_MAGE.toString()] = Entity.Companion.loadEntityConfigByPath(TOWN_MAGE_CONFIG)
-        _entities[EntityName.TOWN_INNKEEPER.toString()] = Entity.Companion.loadEntityConfigByPath(TOWN_INNKEEPER_CONFIG)
-        _entities[EntityName.PLAYER_PUPPET.toString()] = Entity.Companion.loadEntityConfigByPath(PLAYER_CONFIG)
+        val townFolkConfigs: Array<EntityConfig> = Entity.getEntityConfigs(TOWN_FOLK_CONFIGS)
+        townFolkConfigs.forEach { entities[it.entityID] = it }
+        val environmentalEntityConfigs: Array<EntityConfig> = Entity.getEntityConfigs(ENVIRONMENTAL_ENTITY_CONFIGS)
+        environmentalEntityConfigs.forEach { entities[it.entityID] = it }
+        entities[EntityName.TOWN_GUARD_WALKING.toString()] = Entity.loadEntityConfigByPath(TOWN_GUARD_WALKING_CONFIG)
+        entities[EntityName.TOWN_BLACKSMITH.toString()] = Entity.loadEntityConfigByPath(TOWN_BLACKSMITH_CONFIG)
+        entities[EntityName.TOWN_MAGE.toString()] = Entity.loadEntityConfigByPath(TOWN_MAGE_CONFIG)
+        entities[EntityName.TOWN_INNKEEPER.toString()] = Entity.loadEntityConfigByPath(TOWN_INNKEEPER_CONFIG)
+        entities[EntityName.PLAYER_PUPPET.toString()] = Entity.loadEntityConfigByPath(PLAYER_CONFIG)
     }
 }

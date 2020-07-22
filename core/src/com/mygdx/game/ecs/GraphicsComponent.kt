@@ -13,57 +13,73 @@ import com.mygdx.game.ecs.Entity.AnimationType
 import java.util.*
 
 abstract class GraphicsComponent protected constructor() : ComponentSubject(), Component {
-    protected var _currentFrame: TextureRegion? = null
-    protected var _frameTime = 0f
-    protected var _currentState: Entity.State
-    protected var _currentDirection: Entity.Direction
-    protected var _json: Json
-    var _currentPosition: Vector2
-    protected var _animations: Hashtable<AnimationType, Animation<TextureRegion>>
-    protected var _shapeRenderer: ShapeRenderer
+    protected var currentFrame: TextureRegion? = null
+    private var frameTime = 0f
+    protected var currentState: Entity.State = Entity.State.WALKING
+    protected var currentDirection: Entity.Direction = Entity.Direction.DOWN
+    protected var json: Json = Json()
+    var currentPosition: Vector2 = Vector2(0F, 0F)
+    protected var animations: Hashtable<AnimationType, Animation<TextureRegion>> = Hashtable()
+    protected var shapeRenderer: ShapeRenderer = ShapeRenderer()
     abstract fun update(entity: Entity, mapManager: MapManager, batch: Batch, delta: Float)
     protected fun updateAnimations(delta: Float) {
-        _frameTime = (_frameTime + delta) % 5 //Want to avoid overflow
-        when (_currentDirection) {
-            Entity.Direction.DOWN -> if (_currentState == Entity.State.WALKING) {
-                val animation = _animations[AnimationType.WALK_DOWN] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
-            } else if (_currentState == Entity.State.IDLE) {
-                val animation = _animations[AnimationType.WALK_DOWN] ?: return
-                _currentFrame = animation.keyFrames[0]
-            } else if (_currentState == Entity.State.IMMOBILE) {
-                val animation = _animations[AnimationType.IMMOBILE] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
+        frameTime = (frameTime + delta) % 5 //Want to avoid overflow
+        when (currentDirection) {
+            Entity.Direction.DOWN -> currentFrame = when (currentState) {
+                Entity.State.WALKING -> {
+                    val animation = animations[AnimationType.WALK_DOWN] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
+                Entity.State.IDLE -> {
+                    val animation = animations[AnimationType.WALK_DOWN] ?: return
+                    animation.keyFrames[0]
+                }
+                Entity.State.IMMOBILE -> {
+                    val animation = animations[AnimationType.IMMOBILE] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
             }
-            Entity.Direction.LEFT -> if (_currentState == Entity.State.WALKING) {
-                val animation = _animations[AnimationType.WALK_LEFT] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
-            } else if (_currentState == Entity.State.IDLE) {
-                val animation = _animations[AnimationType.WALK_LEFT] ?: return
-                _currentFrame = animation.keyFrames[0]
-            } else if (_currentState == Entity.State.IMMOBILE) {
-                val animation = _animations[AnimationType.IMMOBILE] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
+            Entity.Direction.LEFT -> currentFrame = when (currentState) {
+                Entity.State.WALKING -> {
+                    val animation = animations[AnimationType.WALK_LEFT] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
+                Entity.State.IDLE -> {
+                    val animation = animations[AnimationType.WALK_LEFT] ?: return
+                    animation.keyFrames[0]
+                }
+                Entity.State.IMMOBILE -> {
+                    val animation = animations[AnimationType.IMMOBILE] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
             }
-            Entity.Direction.UP -> if (_currentState == Entity.State.WALKING) {
-                val animation = _animations[AnimationType.WALK_UP] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
-            } else if (_currentState == Entity.State.IDLE) {
-                val animation = _animations[AnimationType.WALK_UP] ?: return
-                _currentFrame = animation.keyFrames[0]
-            } else if (_currentState == Entity.State.IMMOBILE) {
-                val animation = _animations[AnimationType.IMMOBILE] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
+            Entity.Direction.UP -> currentFrame = when (currentState) {
+                Entity.State.WALKING -> {
+                    val animation = animations[AnimationType.WALK_UP] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
+                Entity.State.IDLE -> {
+                    val animation = animations[AnimationType.WALK_UP] ?: return
+                    animation.keyFrames[0]
+                }
+                Entity.State.IMMOBILE -> {
+                    val animation = animations[AnimationType.IMMOBILE] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
             }
-            Entity.Direction.RIGHT -> if (_currentState == Entity.State.WALKING) {
-                val animation = _animations[AnimationType.WALK_RIGHT] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
-            } else if (_currentState == Entity.State.IDLE) {
-                val animation = _animations[AnimationType.WALK_RIGHT] ?: return
-                _currentFrame = animation.keyFrames[0]
-            } else if (_currentState == Entity.State.IMMOBILE) {
-                val animation = _animations[AnimationType.IMMOBILE] ?: return
-                _currentFrame = animation.getKeyFrame(_frameTime)
+            Entity.Direction.RIGHT -> currentFrame = when (currentState) {
+                Entity.State.WALKING -> {
+                    val animation = animations[AnimationType.WALK_RIGHT] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
+                Entity.State.IDLE -> {
+                    val animation = animations[AnimationType.WALK_RIGHT] ?: return
+                    animation.keyFrames[0]
+                }
+                Entity.State.IMMOBILE -> {
+                    val animation = animations[AnimationType.IMMOBILE] ?: return
+                    animation.getKeyFrame(frameTime)
+                }
             }
         }
     }
@@ -74,8 +90,8 @@ abstract class GraphicsComponent protected constructor() : ComponentSubject(), C
         val texture1 = Utility.getTextureAsset(firstTexture)
         Utility.loadTextureAsset(secondTexture)
         val texture2 = Utility.getTextureAsset(secondTexture)
-        val texture1Frames = TextureRegion.split(texture1, Entity.Companion.FRAME_WIDTH, Entity.Companion.FRAME_HEIGHT)
-        val texture2Frames = TextureRegion.split(texture2, Entity.Companion.FRAME_WIDTH, Entity.Companion.FRAME_HEIGHT)
+        val texture1Frames = TextureRegion.split(texture1, Entity.FRAME_WIDTH, Entity.FRAME_HEIGHT)
+        val texture2Frames = TextureRegion.split(texture2, Entity.FRAME_WIDTH, Entity.FRAME_HEIGHT)
         val point = points.first()
         val animation: Animation<TextureRegion> = Animation(frameDuration, texture1Frames[point.x][point.y], texture2Frames[point.x][point.y])
         animation.playMode = Animation.PlayMode.LOOP
@@ -85,26 +101,17 @@ abstract class GraphicsComponent protected constructor() : ComponentSubject(), C
     protected fun loadAnimation(textureName: String, points: com.badlogic.gdx.utils.Array<GridPoint2>, frameDuration: Float): Animation<TextureRegion>? {
         Utility.loadTextureAsset(textureName)
         val texture = Utility.getTextureAsset(textureName)
-        val textureFrames = TextureRegion.split(texture, Entity.Companion.FRAME_WIDTH, Entity.Companion.FRAME_HEIGHT)
+        val textureFrames = TextureRegion.split(texture, Entity.FRAME_WIDTH, Entity.FRAME_HEIGHT)
         val animationKeyFrames = arrayOfNulls<TextureRegion>(points.size)
-        for (i in 0 until points.size) {
-            animationKeyFrames[i] = textureFrames[points[i].x][points[i].y]
-        }
+        points.forEachIndexed { index, point -> animationKeyFrames[index] = textureFrames[point.x][point.y] }
+
         val animation: Animation<TextureRegion> = Animation(frameDuration, *animationKeyFrames as Array<TextureRegion>)
         animation.playMode = Animation.PlayMode.LOOP
         return animation
     }
 
     fun getAnimation(type: AnimationType?): Animation<TextureRegion> {
-        return _animations[type]!!
+        return animations[type]!!
     }
 
-    init {
-        _currentPosition = Vector2(0F, 0F)
-        _currentState = Entity.State.WALKING
-        _currentDirection = Entity.Direction.DOWN
-        _json = Json()
-        _animations = Hashtable()
-        _shapeRenderer = ShapeRenderer()
-    }
 }

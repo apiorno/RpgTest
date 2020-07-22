@@ -17,7 +17,7 @@ class EntityConfig {
     var questConfigPath: String? = null
     var currentQuestID: String? = null
     var itemTypeID: String? = null
-    var entityProperties: ObjectMap<String, String>
+    private var entityProperties: ObjectMap<String, String>
 
     enum class EntityProperties {
         ENTITY_HEALTH_POINTS, ENTITY_ATTACK_POINTS, ENTITY_DEFENSE_POINTS, ENTITY_HIT_DAMAGE_TOTAL, ENTITY_XP_REWARD, ENTITY_GP_REWARD, NONE
@@ -29,8 +29,8 @@ class EntityConfig {
         entityProperties = ObjectMap()
     }
 
-    internal constructor(config: EntityConfig?) {
-        state = config!!.state
+    internal constructor(config: EntityConfig) {
+        state = config.state
         direction = config.direction
         entityID = config.entityID
         conversationConfigPath = config.conversationConfigPath
@@ -59,14 +59,8 @@ class EntityConfig {
 
     class AnimationConfig {
         var frameDuration = 1.0f
-        var animationType: AnimationType
-        var texturePaths: Array<String>
-        var gridPoints: Array<GridPoint2>
-
-        init {
-            animationType = AnimationType.IDLE
-            texturePaths = Array()
-            gridPoints = Array()
-        }
+        var animationType: AnimationType = AnimationType.IDLE
+        var texturePaths: Array<String> = Array()
+        var gridPoints: Array<GridPoint2> = Array()
     }
 }

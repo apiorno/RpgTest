@@ -5,49 +5,48 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Image
-import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.mygdx.game.BludBourne
-import com.mygdx.game.BludBourne.ScreenType
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.Utility
 import com.mygdx.game.audio.AudioObserver.AudioCommand
 import com.mygdx.game.audio.AudioObserver.AudioTypeEvent
+import ktx.scene2d.*
 
-class MainMenuScreen(private val _game: BludBourne) : GameScreen() {
-    private val _stage: Stage
+class MainMenuScreen(private val game: BludBourne) : GameScreen() {
+
+    private val stage: Stage = Stage()
+
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-        _stage.act(delta)
-        _stage.draw()
+        stage.act(delta)
+        stage.draw()
     }
 
     override fun resize(width: Int, height: Int) {
-        _stage.viewport.setScreenSize(width, height)
+        stage.viewport.setScreenSize(width, height)
     }
 
     override fun show() {
         notify(AudioCommand.MUSIC_PLAY_LOOP, AudioTypeEvent.MUSIC_TITLE)
-        Gdx.input.inputProcessor = _stage
+        Gdx.input.inputProcessor = stage
     }
 
     override fun hide() {
         Gdx.input.inputProcessor = null
     }
 
-    override fun pause() {}
-    override fun resume() {}
     override fun dispose() {
-        _stage.dispose()
+        stage.dispose()
     }
 
     init {
+        addActorsToStage()
+    }
 
-        //creation
-        _stage = Stage()
-        val table = Table()
-        table.setFillParent(true)
+    private fun addActorsToStage() {
         val title = Image(Utility.STATUSUI_TEXTUREATLAS.findRegion("bludbourne_title"))
         val newGameButton = TextButton("New Game", Utility.STATUSUI_SKIN)
         val loadGameButton = TextButton("Load Game", Utility.STATUSUI_SKIN)
@@ -55,15 +54,17 @@ class MainMenuScreen(private val _game: BludBourne) : GameScreen() {
         val creditsButton = TextButton("Credits", Utility.STATUSUI_SKIN)
         val exitButton = TextButton("Exit", Utility.STATUSUI_SKIN)
 
-
-        //Layout
-        table.add(title).spaceBottom(75f).row()
-        table.add(newGameButton).spaceBottom(10f).row()
-        table.add(loadGameButton).spaceBottom(10f).row()
-        table.add(watchIntroButton).spaceBottom(10f).row()
-        table.add(creditsButton).spaceBottom(10f).row()
-        table.add(exitButton).spaceBottom(10f).row()
-        _stage.addActor(table)
+        stage.actors {
+            table {
+                setFillParent(true)
+                add(title).spaceBottom(75f).row()
+                add(newGameButton).spaceBottom(10f).row()
+                add(loadGameButton).spaceBottom(10f).row()
+                add(watchIntroButton).spaceBottom(10f).row()
+                add(creditsButton).spaceBottom(10f).row()
+                add(exitButton).spaceBottom(10f).row()
+            }
+        }
 
         //Listeners
         newGameButton.addListener(object : ClickListener() {
@@ -72,7 +73,7 @@ class MainMenuScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _game.screen = _game.getScreenType(ScreenType.NewGame)
+                game.changeScreenToType(ScreenType.NewGame)
             }
         }
         )
@@ -82,7 +83,7 @@ class MainMenuScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _game.screen = _game.getScreenType(ScreenType.LoadGame)
+                game.changeScreenToType(ScreenType.LoadGame)
             }
         }
         )
@@ -103,7 +104,7 @@ class MainMenuScreen(private val _game: BludBourne) : GameScreen() {
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
                 notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TITLE)
-                _game.screen = _game.getScreenType(ScreenType.WatchIntro)
+                game.changeScreenToType(ScreenType.WatchIntro)
             }
         }
         )
@@ -113,10 +114,11 @@ class MainMenuScreen(private val _game: BludBourne) : GameScreen() {
             }
 
             override fun touchUp(event: InputEvent, x: Float, y: Float, pointer: Int, button: Int) {
-                _game.screen = _game.getScreenType(ScreenType.Credits)
+                game.changeScreenToType(ScreenType.Credits)
             }
         }
         )
         notify(AudioCommand.MUSIC_LOAD, AudioTypeEvent.MUSIC_TITLE)
     }
+
 }

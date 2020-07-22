@@ -5,9 +5,9 @@ import com.badlogic.gdx.utils.Json
 import java.util.*
 
 abstract class InputComponent internal constructor() : ComponentSubject(), Component, InputProcessor {
-    protected var _currentDirection: Entity.Direction? = null
-    protected var _currentState: Entity.State? = null
-    protected var _json: Json
+    protected var currentDirection: Entity.Direction? = null
+    protected var currentState: Entity.State? = null
+    protected var json: Json = Json()
 
     enum class Keys {
         LEFT, RIGHT, UP, DOWN, QUIT, PAUSE
@@ -19,9 +19,9 @@ abstract class InputComponent internal constructor() : ComponentSubject(), Compo
 
     companion object {
         @JvmStatic
-        protected var keys: MutableMap<Keys, Boolean> = HashMap()
+        protected var keys: MutableMap<Keys, Boolean> = EnumMap(Keys::class.java)
         @JvmStatic
-        protected var mouseButtons: MutableMap<Mouse, Boolean> = HashMap()
+        protected var mouseButtons: MutableMap<Mouse, Boolean> = EnumMap(Mouse::class.java)
 
         //initialize the hashmap for inputs
         init {
@@ -31,9 +31,6 @@ abstract class InputComponent internal constructor() : ComponentSubject(), Compo
             keys[Keys.DOWN] = false
             keys[Keys.QUIT] = false
             keys[Keys.PAUSE] = false
-        }
-
-        init {
             mouseButtons[Mouse.SELECT] = false
             mouseButtons[Mouse.DOACTION] = false
         }
@@ -41,7 +38,4 @@ abstract class InputComponent internal constructor() : ComponentSubject(), Compo
 
     abstract fun update(entity: Entity, delta: Float)
 
-    init {
-        _json = Json()
-    }
 }

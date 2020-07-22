@@ -12,24 +12,24 @@ import com.mygdx.game.Utility
 
 class InventorySlot() : Stack(), InventorySlotSubject {
     //All slots have this default image
-    private val _defaultBackground: Stack
-    private var _customBackgroundDecal: Image
-    private val _numItemsLabel: Label?
-    private var _numItemsVal = 0
-    private var _filterItemType = 0
-    private val _observers: Array<InventorySlotObserver>
+    private val defaultBackground: Stack = Stack()
+    private var customBackgroundDecal: Image
+    private val numItemsLabel: Label?
+    private var numItemsVal = 0
+    private var filterItemType = 0
+    private val observers: Array<InventorySlotObserver>
 
     constructor(filterItemType: Int, customBackgroundDecal: Image) : this() {
-        _filterItemType = filterItemType
-        _customBackgroundDecal = customBackgroundDecal
-        _defaultBackground.add(_customBackgroundDecal)
+        this.filterItemType = filterItemType
+        this.customBackgroundDecal = customBackgroundDecal
+        defaultBackground.add(this.customBackgroundDecal)
     }
 
     fun decrementItemCount(sendRemoveNotification: Boolean) {
-        _numItemsVal--
-        _numItemsLabel!!.setText(_numItemsVal.toString())
-        if (_defaultBackground.children.size == 1) {
-            _defaultBackground.add(_customBackgroundDecal)
+        numItemsVal--
+        numItemsLabel!!.setText(numItemsVal.toString())
+        if (defaultBackground.children.size == 1) {
+            defaultBackground.add(customBackgroundDecal)
         }
         checkVisibilityOfItemCount()
         if (sendRemoveNotification) {
@@ -37,11 +37,11 @@ class InventorySlot() : Stack(), InventorySlotSubject {
         }
     }
 
-    fun incrementItemCount(sendAddNotification: Boolean) {
-        _numItemsVal++
-        _numItemsLabel!!.setText(_numItemsVal.toString())
-        if (_defaultBackground.children.size > 1) {
-            _defaultBackground.children.pop()
+    private fun incrementItemCount(sendAddNotification: Boolean) {
+        numItemsVal++
+        numItemsLabel!!.setText(numItemsVal.toString())
+        if (defaultBackground.children.size > 1) {
+            defaultBackground.children.pop()
         }
         checkVisibilityOfItemCount()
         if (sendAddNotification) {
@@ -51,31 +51,31 @@ class InventorySlot() : Stack(), InventorySlotSubject {
 
     override fun add(actor: Actor) {
         super.add(actor)
-        if (_numItemsLabel == null) {
+        if (numItemsLabel == null) {
             return
         }
-        if (actor != _defaultBackground && actor != _numItemsLabel) {
+        if (actor != defaultBackground && actor != numItemsLabel) {
             incrementItemCount(true)
         }
     }
 
     fun remove(actor: Actor?) {
         super.removeActor(actor)
-        if (_numItemsLabel == null) {
+        if (numItemsLabel == null) {
             return
         }
-        if (actor != _defaultBackground && actor != _numItemsLabel) {
+        if (actor != defaultBackground && actor != numItemsLabel) {
             decrementItemCount(true)
         }
     }
 
-    fun add(array: Array<Actor>) {
-        for (actor in array) {
-            super.add(actor)
-            if (_numItemsLabel == null) {
+    fun add(actors: Array<Actor>) {
+        actors.forEach {
+            super.add(it)
+            if (numItemsLabel == null) {
                 return
             }
-            if (actor != _defaultBackground && actor != _numItemsLabel) {
+            if (it != defaultBackground && it != numItemsLabel) {
                 incrementItemCount(true)
             }
         }
@@ -97,10 +97,9 @@ class InventorySlot() : Stack(), InventorySlotSubject {
 
     fun updateAllInventoryItemNames(name: String?) {
         if (hasItem()) {
-            val arrayChildren = children
             //skip first two elements
-            for (i in arrayChildren.size - 1 downTo 2) {
-                arrayChildren[i].name = name
+            for (i in children.size - 1 downTo 2) {
+                children[i].name = name
             }
         }
     }
@@ -131,30 +130,17 @@ class InventorySlot() : Stack(), InventorySlotSubject {
     }
 
     private fun checkVisibilityOfItemCount() {
-        if (_numItemsVal < 2) {
-            _numItemsLabel!!.isVisible = false
-        } else {
-            _numItemsLabel!!.isVisible = true
-        }
+        numItemsLabel!!.isVisible = numItemsVal >= 2
     }
 
     fun hasItem(): Boolean {
-        if (hasChildren()) {
-            val items = children
-            if (items.size > 2) {
-                return true
-            }
-        }
-        return false
+        return hasChildren() && children.size>2
+
     }
 
     val numItems: Int
         get() {
-            if (hasChildren()) {
-                val items = children
-                return items.size - 2
-            }
-            return 0
+           return if(hasChildren()) children.size-2 else 0
         }
 
     fun getNumItems(name: String?): Int {
@@ -172,10 +158,10 @@ class InventorySlot() : Stack(), InventorySlotSubject {
     }
 
     fun doesAcceptItemUseType(itemUseType: Int): Boolean {
-        return if (_filterItemType == 0) {
+        return if (filterItemType == 0) {
             true
         } else {
-            _filterItemType and itemUseType == itemUseType
+            filterItemType and itemUseType == itemUseType
         }
     }
 
@@ -192,22 +178,22 @@ class InventorySlot() : Stack(), InventorySlotSubject {
         }
 
     override fun addObserver(inventorySlotObserver: InventorySlotObserver) {
-        _observers.add(inventorySlotObserver)
+        observers.add(inventorySlotObserver)
     }
 
     override fun removeObserver(inventorySlotObserver: InventorySlotObserver) {
-        _observers.removeValue(inventorySlotObserver, true)
+        observers.removeValue(inventorySlotObserver, true)
     }
 
     override fun removeAllObservers() {
-        for (observer in _observers) {
-            _observers.removeValue(observer, true)
+        observers.forEach {
+            observers.removeValue(it, true)
         }
     }
 
     override fun notify(slot: InventorySlot, event: SlotEvent) {
-        for (observer in _observers) {
-            observer.onNotify(slot, event)
+        observers.forEach {
+            it.onNotify(slot, event)
         }
     }
 
@@ -230,17 +216,16 @@ class InventorySlot() : Stack(), InventorySlotSubject {
 
     init {
         //filter nothing
-        _defaultBackground = Stack()
-        _customBackgroundDecal = Image()
-        _observers = Array()
+        customBackgroundDecal = Image()
+        observers = Array()
         val image = Image(NinePatch(Utility.STATUSUI_TEXTUREATLAS.createPatch("dialog")))
-        _numItemsLabel = Label(_numItemsVal.toString(), Utility.STATUSUI_SKIN, "inventory-item-count")
-        _numItemsLabel.setAlignment(Align.bottomRight)
-        _numItemsLabel.isVisible = false
-        _defaultBackground.add(image)
-        _defaultBackground.name = "background"
-        _numItemsLabel.name = "numitems"
-        this.add(_defaultBackground)
-        this.add(_numItemsLabel)
+        numItemsLabel = Label(numItemsVal.toString(), Utility.STATUSUI_SKIN, "inventory-item-count")
+        numItemsLabel.setAlignment(Align.bottomRight)
+        numItemsLabel.isVisible = false
+        defaultBackground.add(image)
+        defaultBackground.name = "background"
+        numItemsLabel.name = "numitems"
+        this.add(defaultBackground)
+        this.add(numItemsLabel)
     }
 }

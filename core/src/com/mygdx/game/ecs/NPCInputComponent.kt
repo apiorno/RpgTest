@@ -6,25 +6,26 @@ import com.badlogic.gdx.math.MathUtils
 import com.mygdx.game.ecs.Component.MESSAGE
 
 class NPCInputComponent internal constructor() : InputComponent() {
-    private var _frameTime = 0.0f
+    private var frameTime = 0.0f
+
     override fun receiveMessage(message: String) {
-        val string: Array<String> = message.split(Component.Companion.MESSAGE_TOKEN).toTypedArray()
-        if (string.size == 0) return
+        val string: Array<String> = message.split(Component.MESSAGE_TOKEN).toTypedArray()
+        if (string.isEmpty()) return
 
         //Specifically for messages with 1 object payload
         if (string.size == 1) {
             if (string[0].equals(MESSAGE.COLLISION_WITH_MAP.toString(), ignoreCase = true)) {
-                _currentDirection = Entity.Direction.Companion.randomNext
+                currentDirection = Entity.Direction.randomNext
             } else if (string[0].equals(MESSAGE.COLLISION_WITH_ENTITY.toString(), ignoreCase = true)) {
-                _currentState = Entity.State.IDLE
+                currentState = Entity.State.IDLE
                 //_currentDirection = _currentDirection.getOpposite();
             }
         }
         if (string.size == 2) {
             if (string[0].equals(MESSAGE.INIT_STATE.toString(), ignoreCase = true)) {
-                _currentState = _json.fromJson(Entity.State::class.java, string[1])
+                currentState = json.fromJson(Entity.State::class.java, string[1])
             } else if (string[0].equals(MESSAGE.INIT_DIRECTION.toString(), ignoreCase = true)) {
-                _currentDirection = _json.fromJson(Entity.Direction::class.java, string[1])
+                currentDirection = json.fromJson(Entity.Direction::class.java, string[1])
             }
         }
     }
@@ -36,45 +37,45 @@ class NPCInputComponent internal constructor() : InputComponent() {
         }
 
         //If IMMOBILE, don't update anything
-        if (_currentState == Entity.State.IMMOBILE) {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.IMMOBILE))
+        if (currentState == Entity.State.IMMOBILE) {
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.IMMOBILE))
             return
         }
-        _frameTime += delta
+        frameTime += delta
 
         //Change direction after so many seconds
-        if (_frameTime > MathUtils.random(1, 5)) {
-            _currentState = Entity.State.Companion.randomNext
-            _currentDirection = Entity.Direction.Companion.randomNext
-            _frameTime = 0.0f
+        if (frameTime > MathUtils.random(1, 5)) {
+            currentState = Entity.State.randomNext
+            currentDirection = Entity.Direction.randomNext
+            frameTime = 0.0f
         }
-        if (_currentState == Entity.State.IDLE) {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.IDLE))
+        if (currentState == Entity.State.IDLE) {
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.IDLE))
             return
         }
-        when (_currentDirection) {
+        when (currentDirection) {
             Entity.Direction.LEFT -> {
-                entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.LEFT))
+                entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.LEFT))
             }
             Entity.Direction.RIGHT -> {
-                entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.RIGHT))
+                entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.RIGHT))
             }
             Entity.Direction.UP -> {
-                entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.UP))
+                entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.UP))
             }
             Entity.Direction.DOWN -> {
-                entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.DOWN))
+                entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.DOWN))
             }
         }
     }
 
     override fun keyDown(keycode: Int): Boolean {
         if (keycode == Input.Keys.Q) {
-            InputComponent.Companion.keys.put(Keys.QUIT, true)
+            keys[Keys.QUIT] = true
         }
         return false
     }
@@ -112,7 +113,7 @@ class NPCInputComponent internal constructor() : InputComponent() {
     }
 
     init {
-        _currentDirection = Entity.Direction.Companion.randomNext
-        _currentState = Entity.State.WALKING
+        currentDirection = Entity.Direction.randomNext
+        currentState = Entity.State.WALKING
     }
 }

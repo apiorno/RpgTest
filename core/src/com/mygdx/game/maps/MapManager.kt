@@ -18,25 +18,23 @@ import com.mygdx.game.profile.ProfileObserver.ProfileEvent
 import com.mygdx.game.sfx.ClockActor.TimeOfDay
 
 class MapManager : ProfileObserver {
-    var camera: Camera? = null
-    private var _mapChanged = false
-    private var _currentMap: Map? = null
-    var player: Entity? = null
+    lateinit var camera: Camera
+    private var mapChanged = false
+    private  var currentMap: Map? = null
+    lateinit var player: Entity
     var currentSelectedMapEntity: Entity? = null
     var currentLightMapLayer: MapLayer? = null
-        private set
     var previousLightMapLayer: MapLayer? = null
-        private set
-    private var _timeOfDay: TimeOfDay? = null
-    private var _currentLightMapOpacity = 0f
-    private var _previousLightMapOpacity = 1f
-    private var _timeOfDayChanged = false
+    private  var timeOfDay: TimeOfDay? = null
+    private var currentLightMapOpacity = 0f
+    private var previousLightMapOpacity = 1f
+    private var timeOfDayChanged = false
     override fun onNotify(profileManager: ProfileManager, event: ProfileEvent) {
         when (event) {
             ProfileEvent.PROFILE_LOADED -> {
                 val currentMap = profileManager.getProperty("currentMapType", String::class.java)
                 val mapType: MapType
-                mapType = if (currentMap == null || currentMap.isEmpty()) {
+                mapType = if (currentMap == null || currentMap == "null" || currentMap.isEmpty()) {
                     MapType.TOWN
                 } else {
                     MapType.valueOf(currentMap)
@@ -56,15 +54,13 @@ class MapManager : ProfileObserver {
                 }
             }
             ProfileEvent.SAVING_PROFILE -> {
-                if (_currentMap != null) {
-                    profileManager.setProperty("currentMapType", _currentMap!!.currentMapType.toString())
-                }
+                profileManager.setProperty("currentMapType", currentMap?.currentMapType.toString())
                 profileManager.setProperty("topWorldMapStartPosition", MapFactory.getMap(MapType.TOP_WORLD)?.playerStart!!)
                 profileManager.setProperty("castleOfDoomMapStartPosition", MapFactory.getMap(MapType.CASTLE_OF_DOOM)?.playerStart!!)
                 profileManager.setProperty("townMapStartPosition", MapFactory.getMap(MapType.TOWN)?.playerStart!!)
             }
             ProfileEvent.CLEAR_CURRENT_PROFILE -> {
-                _currentMap = null
+                currentMap = null
                 profileManager.setProperty("currentMapType", MapType.TOWN.toString())
                 MapFactory.clearCache()
                 profileManager.setProperty("topWorldMapStartPosition", MapFactory.getMap(MapType.TOP_WORLD)?.playerStart!!)
@@ -80,176 +76,159 @@ class MapManager : ProfileObserver {
             Gdx.app.debug(TAG, "Map does not exist!  ")
             return
         }
-        if (_currentMap != null) {
-            _currentMap!!.unloadMusic()
-            if (previousLightMapLayer != null) {
-                previousLightMapLayer!!.opacity = 0f
-                previousLightMapLayer = null
-            }
-            if (currentLightMapLayer != null) {
-                currentLightMapLayer!!.opacity = 1f
-                currentLightMapLayer = null
-            }
+        if (currentMap != null) {
+            currentMap!!.unloadMusic()
+            previousLightMapLayer?.opacity = 0f
+            previousLightMapLayer = null
+            currentLightMapLayer?.opacity = 1f
+            currentLightMapLayer = null
         }
         map.loadMusic()
-        _currentMap = map
-        _mapChanged = true
+        currentMap = map
+        mapChanged = true
         clearCurrentSelectedMapEntity()
-        Gdx.app.debug(TAG, "Player Start: (" + _currentMap!!.playerStart.x + "," + _currentMap!!.playerStart.y + ")")
+        Gdx.app.debug(TAG, "Player Start: (" + currentMap!!.playerStart.x + "," + currentMap!!.playerStart.y + ")")
     }
 
     fun unregisterCurrentMapEntityObservers() {
-        if (_currentMap != null) {
-            val entities = _currentMap!!.mapEntities
-            for (entity in entities) {
-                entity!!.unregisterObservers()
-            }
-            val questEntities = _currentMap!!.mapQuestEntities
-            for (questEntity in questEntities) {
-                questEntity!!.unregisterObservers()
-            }
+        if (currentMap != null) {
+            val entities = currentMap!!.mapEntities
+           entities.forEach { it.unregisterObservers() }
+
+            val questEntities = currentMap!!.mapQuestEntities
+            questEntities.forEach { it?.unregisterObservers() }
         }
     }
 
     fun registerCurrentMapEntityObservers(observer: ComponentObserver?) {
-        if (_currentMap != null) {
-            val entities = _currentMap!!.mapEntities
-            for (entity in entities) {
-                entity!!.registerObserver(observer)
-            }
-            val questEntities = _currentMap!!.mapQuestEntities
-            for (questEntity in questEntities) {
-                questEntity!!.registerObserver(observer)
-            }
+        if (currentMap != null) {
+            val entities = currentMap!!.mapEntities
+            entities.forEach { it.registerObserver(observer) }
+
+            val questEntities = currentMap!!.mapQuestEntities
+            questEntities.forEach { it?.registerObserver(observer) }
         }
     }
 
-    fun disableCurrentmapMusic() {
-        _currentMap!!.unloadMusic()
+    fun disableCurrentMapMusic() {
+        currentMap?.unloadMusic()
     }
 
-    fun enableCurrentmapMusic() {
-        _currentMap!!.loadMusic()
+    fun enableCurrentMapMusic() {
+        currentMap?.loadMusic()
     }
 
     fun setClosestStartPositionFromScaledUnits(position: Vector2) {
-        _currentMap!!.setClosestStartPositionFromScaledUnits(position)
+        currentMap?.setClosestStartPositionFromScaledUnits(position)
     }
 
     val collisionLayer: MapLayer?
-        get() = _currentMap?.collisionLayer
+        get() = currentMap?.collisionLayer
 
     val portalLayer: MapLayer?
-        get() = _currentMap?.portalLayer
-
-    fun getQuestItemSpawnPositions(objectName: String?, objectTaskID: String?): Array<Vector2> {
-        return _currentMap!!.getQuestItemSpawnPositions(objectName, objectTaskID)
-    }
+        get() = currentMap?.portalLayer
 
     val questDiscoverLayer: MapLayer?
-        get() = _currentMap!!.questDiscoverLayer
+        get() = currentMap?.questDiscoverLayer
 
     val enemySpawnLayer: MapLayer?
-        get() = _currentMap!!.enemySpawnLayer
+        get() = currentMap?.enemySpawnLayer
 
     val currentMapType: MapType?
-        get() = _currentMap!!.currentMapType
+        get() = currentMap?.currentMapType
 
     val playerStartUnitScaled: Vector2?
-        get() = _currentMap!!.playerStartUnitScaled
+        get() = currentMap?.playerStartUnitScaled
 
     val currentTiledMap: TiledMap?
         get() {
-            if (_currentMap == null) {
-                loadMap(MapType.TOWN)
-            }
-            return _currentMap?.currentTiledMap
+            currentMap ?: loadMap(MapType.TOWN)
+            return currentMap?.currentTiledMap
         }
 
+    fun getQuestItemSpawnPositions(objectName: String?, objectTaskID: String?): Array<Vector2> {
+        return currentMap!!.getQuestItemSpawnPositions(objectName, objectTaskID)
+    }
+
     fun updateLightMaps(timeOfDay: TimeOfDay) {
-        if (_timeOfDay != timeOfDay) {
-            _currentLightMapOpacity = 0f
-            _previousLightMapOpacity = 1f
-            _timeOfDay = timeOfDay
-            _timeOfDayChanged = true
+        if (this.timeOfDay != timeOfDay) {
+            currentLightMapOpacity = 0f
+            previousLightMapOpacity = 1f
+            this.timeOfDay = timeOfDay
+            timeOfDayChanged = true
             previousLightMapLayer = currentLightMapLayer
             Gdx.app.debug(TAG, "Time of Day CHANGED")
         }
-        when (timeOfDay) {
-            TimeOfDay.DAWN -> currentLightMapLayer = _currentMap!!.lightMapDawnLayer
-            TimeOfDay.AFTERNOON -> currentLightMapLayer = _currentMap!!.lightMapAfternoonLayer
-            TimeOfDay.DUSK -> currentLightMapLayer = _currentMap!!.lightMapDuskLayer
-            TimeOfDay.NIGHT -> currentLightMapLayer = _currentMap!!.lightMapNightLayer
-            else -> currentLightMapLayer = _currentMap!!.lightMapAfternoonLayer
+        currentLightMapLayer = when (timeOfDay) {
+            TimeOfDay.DAWN -> currentMap!!.lightMapDawnLayer
+            TimeOfDay.AFTERNOON -> currentMap!!.lightMapAfternoonLayer
+            TimeOfDay.DUSK -> currentMap!!.lightMapDuskLayer
+            TimeOfDay.NIGHT -> currentMap!!.lightMapNightLayer
+            else -> currentMap!!.lightMapAfternoonLayer
         }
-        if (this._timeOfDayChanged) {
-            if (previousLightMapLayer != null && _previousLightMapOpacity != 0f) {
-                previousLightMapLayer!!.opacity = _previousLightMapOpacity
-                _previousLightMapOpacity -=0.5f
-                _previousLightMapOpacity = MathUtils.clamp(_previousLightMapOpacity , 0f, 1f)
-                if (_previousLightMapOpacity == 0f) {
+        if (this.timeOfDayChanged) {
+            if (previousLightMapLayer != null && previousLightMapOpacity != 0f) {
+                previousLightMapLayer!!.opacity = previousLightMapOpacity
+                previousLightMapOpacity -=0.5f
+                previousLightMapOpacity = MathUtils.clamp(previousLightMapOpacity , 0f, 1f)
+                if (previousLightMapOpacity == 0f) {
                     previousLightMapLayer = null
                 }
             }
-            if (currentLightMapLayer != null && _currentLightMapOpacity != 1f) {
-                currentLightMapLayer!!.opacity = _currentLightMapOpacity
-                _currentLightMapOpacity += 0.1f
-                _currentLightMapOpacity = MathUtils.clamp(_currentLightMapOpacity, 0f, 1f)
+            if (currentLightMapLayer != null && currentLightMapOpacity != 1f) {
+                currentLightMapLayer!!.opacity = currentLightMapOpacity
+                currentLightMapOpacity += 0.1f
+                currentLightMapOpacity = MathUtils.clamp(currentLightMapOpacity, 0f, 1f)
             }
         } else {
-            _timeOfDayChanged = false
+            timeOfDayChanged = false
         }
     }
 
     fun updateCurrentMapEntities(mapMgr: MapManager, batch: Batch, delta: Float) {
-        _currentMap!!.updateMapEntities(mapMgr, batch, delta)
+        currentMap?.updateMapEntities(mapMgr, batch, delta)
     }
 
     fun updateCurrentMapEffects(mapMgr: MapManager?, batch: Batch, delta: Float) {
-        _currentMap!!.updateMapEffects(mapMgr, batch, delta)
+        currentMap?.updateMapEffects(mapMgr, batch, delta)
     }
 
     val currentMapEntities: Array<Entity>?
-        get() = _currentMap?.mapEntities
+        get() = currentMap?.mapEntities
 
-    val currentMapQuestEntities: Array<Entity?>?
-        get() = _currentMap?.mapQuestEntities
+    val currentMapQuestEntities: Array<Entity>?
+        get() = currentMap?.mapQuestEntities
 
     fun addMapQuestEntities(entities: Array<Entity?>?) {
-        _currentMap?.mapQuestEntities?.addAll(entities)
+        currentMap?.mapQuestEntities?.addAll(entities)
     }
 
     fun removeMapQuestEntity(entity: Entity) {
         entity.unregisterObservers()
-        val positions = ProfileManager.instance.getProperty(entity.entityConfig?.entityID!!, Array::class.java) as Array<Vector2>?
+        val positions = ProfileManager.getProperty(entity.entityConfig?.entityID!!, Array::class.java) as Array<Vector2>?
                 ?: return
-        for (position in positions) {
-            if (position.x == entity.currentPosition?.x &&
-                    position.y == entity.currentPosition?.y) {
-                positions.removeValue(position, true)
-                break
-            }
-        }
-        _currentMap?.mapQuestEntities?.removeValue(entity, true)
-        ProfileManager.instance.setProperty(entity.entityConfig!!.entityID!!, positions)
+        positions.removeAll { (it.x == entity.currentPosition?.x &&
+                it.y == entity.currentPosition?.y) }
+
+        currentMap?.mapQuestEntities?.removeValue(entity, true)
+        ProfileManager.setProperty(entity.entityConfig!!.entityID!!, positions)
     }
 
     fun clearAllMapQuestEntities() {
-        _currentMap?.mapQuestEntities?.clear()
+        currentMap?.mapQuestEntities?.clear()
     }
 
     fun clearCurrentSelectedMapEntity() {
-        if (currentSelectedMapEntity == null) return
-        currentSelectedMapEntity!!.sendMessage(MESSAGE.ENTITY_DESELECTED)
+        currentSelectedMapEntity?.sendMessage(MESSAGE.ENTITY_DESELECTED)
         currentSelectedMapEntity = null
     }
 
     fun hasMapChanged(): Boolean {
-        return _mapChanged
+        return mapChanged
     }
 
     fun setMapChanged(hasMapChanged: Boolean) {
-        _mapChanged = hasMapChanged
+        mapChanged = hasMapChanged
     }
 
     companion object {

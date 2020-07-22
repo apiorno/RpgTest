@@ -9,7 +9,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.utils.Json
 import com.mygdx.game.*
-import com.mygdx.game.BludBourne.ScreenType
+import com.mygdx.game.ScreenManager.*
 import com.mygdx.game.ecs.EntityFactory.Companion.getEntity
 import com.mygdx.game.maps.Map
 import com.mygdx.game.maps.MapFactory.clearCache
@@ -45,8 +45,8 @@ open class MainGameScreen(private val _game: BludBourne) : GameScreen() {
     private val _player: Entity?
     private val _playerHUD: PlayerHUD
     override fun show() {
-        ProfileManager.instance.addObserver(_mapMgr)
-        ProfileManager.instance.addObserver(_playerHUD)
+        ProfileManager.addObserver(_mapMgr)
+        ProfileManager.addObserver(_playerHUD)
         setGameState(GameState.LOADING)
         Gdx.input.inputProcessor = _multiplexer
         if (_mapRenderer == null) {
@@ -63,7 +63,7 @@ open class MainGameScreen(private val _game: BludBourne) : GameScreen() {
 
     override fun render(delta: Float) {
         if (_gameState == GameState.GAME_OVER) {
-            _game.screen = _game.getScreenType(ScreenType.GameOver)
+            _game.changeScreenToType(ScreenType.GameOver)
         }
         if (_gameState == GameState.PAUSED) {
             _player!!.updateInput(delta)
@@ -150,7 +150,7 @@ open class MainGameScreen(private val _game: BludBourne) : GameScreen() {
         if (_mapRenderer != null) {
             _mapRenderer!!.dispose()
         }
-        AudioManager.instance.dispose()
+        AudioManager.dispose()
         clearCache()
     }
 
@@ -193,11 +193,11 @@ open class MainGameScreen(private val _game: BludBourne) : GameScreen() {
             when (gameState) {
                 GameState.RUNNING -> _gameState = GameState.RUNNING
                 GameState.LOADING -> {
-                    ProfileManager.instance.loadProfile()
+                    ProfileManager.loadProfile()
                     _gameState = GameState.RUNNING
                 }
                 GameState.SAVING -> {
-                    ProfileManager.instance.saveProfile()
+                    ProfileManager.saveProfile()
                     _gameState = GameState.PAUSED
                 }
                 GameState.PAUSED -> if (_gameState == GameState.PAUSED) {
@@ -223,11 +223,11 @@ open class MainGameScreen(private val _game: BludBourne) : GameScreen() {
         _camera = OrthographicCamera()
         _camera!!.setToOrtho(false, VIEWPORT.viewportWidth, VIEWPORT.viewportHeight)
         _player = getEntity(EntityFactory.EntityType.PLAYER)
-        _mapMgr.player = _player
-        _mapMgr.camera = _camera
+        _mapMgr.player = _player!!
+        _mapMgr.camera = _camera!!
         _hudCamera = OrthographicCamera()
         _hudCamera!!.setToOrtho(false, VIEWPORT.physicalWidth, VIEWPORT.physicalHeight)
-        _playerHUD = PlayerHUD(_hudCamera!!, _player!!, _mapMgr)
+        _playerHUD = PlayerHUD(_hudCamera!!, _player, _mapMgr)
         _multiplexer = InputMultiplexer()
         _multiplexer.addProcessor(_playerHUD.stage)
         _multiplexer.addProcessor(_player.inputProcessor)

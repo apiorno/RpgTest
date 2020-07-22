@@ -1,31 +1,24 @@
 package com.mygdx.game.dialog
 
-import com.badlogic.gdx.utils.Array
 import com.mygdx.game.dialog.ConversationGraphObserver.ConversationCommandEvent
+import ktx.collections.GdxArray
 
 open class ConversationGraphSubject {
-    private val _observers: Array<ConversationGraphObserver>
+    private val observers: GdxArray<ConversationGraphObserver> = GdxArray()
+
     fun addObserver(graphObserver: ConversationGraphObserver) {
-        _observers.add(graphObserver)
+        observers.add(graphObserver)
     }
 
     fun removeObserver(graphObserver: ConversationGraphObserver) {
-        _observers.removeValue(graphObserver, true)
+        observers.removeValue(graphObserver, true)
     }
 
     fun removeAllObservers() {
-        for (observer in _observers) {
-            _observers.removeValue(observer, true)
-        }
+        observers.clear()
     }
 
     fun notify(graph: ConversationGraph, event: ConversationCommandEvent) {
-        for (observer in _observers) {
-            observer.onNotify(graph, event)
-        }
-    }
-
-    init {
-        _observers = Array()
+        observers.forEach { it.onNotify(graph, event) }
     }
 }

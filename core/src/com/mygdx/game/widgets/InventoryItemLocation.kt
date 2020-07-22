@@ -6,7 +6,6 @@ class InventoryItemLocation {
     var numberItemsAtLocation = 0
     var itemNameProperty: String? = null
 
-    constructor() {}
     constructor(locationIndex: Int, itemTypeAtLocation: String?, numberItemsAtLocation: Int, itemNameProperty: String?) {
         this.locationIndex = locationIndex
         this.itemTypeAtLocation = itemTypeAtLocation

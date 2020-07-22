@@ -6,7 +6,8 @@ import com.mygdx.game.audio.AudioObserver.AudioTypeEvent
 import com.mygdx.game.sfx.ParticleEffectFactory
 import com.mygdx.game.sfx.ParticleEffectFactory.ParticleEffectType
 
-class TopWorldMap internal constructor() : Map(MapType.TOP_WORLD, _mapPath) {
+class TopWorldMap internal constructor() : Map(MapType.TOP_WORLD, mapPath) {
+
     override fun unloadMusic() {
         notify(AudioCommand.MUSIC_STOP, AudioTypeEvent.MUSIC_TOPWORLD)
     }
@@ -17,17 +18,13 @@ class TopWorldMap internal constructor() : Map(MapType.TOP_WORLD, _mapPath) {
     }
 
     companion object {
-        private const val _mapPath = "maps/topworld.tmx"
+        private const val mapPath = "maps/topworld.tmx"
     }
 
     init {
         val lanternEffectPositions = getParticleEffectSpawnPositions(ParticleEffectType.LANTERN_FIRE)
-        for (position in lanternEffectPositions) {
-            mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.LANTERN_FIRE, position))
-        }
+        lanternEffectPositions.forEach { mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.LANTERN_FIRE, it)) }
         val lavaSmokeEffectPositions = getParticleEffectSpawnPositions(ParticleEffectType.LAVA_SMOKE)
-        for (position in lavaSmokeEffectPositions) {
-            mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.LAVA_SMOKE, position))
-        }
+        lavaSmokeEffectPositions.forEach { mapParticleEffects.add(ParticleEffectFactory.getParticleEffect(ParticleEffectType.LAVA_SMOKE, it)) }
     }
 }

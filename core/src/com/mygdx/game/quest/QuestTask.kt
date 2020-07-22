@@ -11,10 +11,10 @@ class QuestTask {
         IS_TASK_COMPLETE, TARGET_TYPE, TARGET_NUM, TARGET_LOCATION, NONE
     }
 
-    var taskProperties: ObjectMap<String, Any>
-    var id: String? = null
-    var taskPhrase: String? = null
-    var questType: QuestType? = null
+    private var taskProperties: ObjectMap<String, String> = ObjectMap()
+    lateinit var id: String
+    lateinit var taskPhrase: String
+    lateinit var questType: QuestType
 
     val isTaskComplete: Boolean
         get() {
@@ -22,8 +22,8 @@ class QuestTask {
                 setPropertyValue(QuestTaskPropertyType.IS_TASK_COMPLETE.toString(), "false")
                 return false
             }
-            val `val` = taskProperties[QuestTaskPropertyType.IS_TASK_COMPLETE.toString()].toString()
-            return java.lang.Boolean.parseBoolean(`val`)
+            val value = taskProperties[QuestTaskPropertyType.IS_TASK_COMPLETE.toString()].toString()
+            return java.lang.Boolean.parseBoolean(value)
         }
 
     fun setTaskComplete() {
@@ -34,20 +34,16 @@ class QuestTask {
         taskProperties.put(QuestTaskPropertyType.IS_TASK_COMPLETE.toString(), "false")
     }
 
-    fun setPropertyValue(key: String, value: String) {
+    private fun setPropertyValue(key: String, value: String) {
         taskProperties.put(key, value)
     }
 
     fun getPropertyValue(key: String): String {
-        val propertyVal = taskProperties[key] ?: return String()
-        return propertyVal.toString()
+        return taskProperties[key] ?: return String()
     }
 
     override fun toString(): String {
-        return taskPhrase!!
+        return taskPhrase
     }
 
-    init {
-        taskProperties = ObjectMap()
-    }
 }

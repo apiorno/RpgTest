@@ -24,10 +24,10 @@ allprojects {
     version = '1.0'
     ext {
         appName = "Rpg-Test"
-        gdxVersion = '1.9.10'
+        gdxVersion = '1.9.11'
         roboVMVersion = '2.3.8'
         box2DLightsVersion = '1.4'
-        ashleyVersion = '1.7.0'
+        ashleyVersion = '1.7.3'
         aiVersion = '1.8.0'
         guiceVersion = '4.2.3'
         ktxVersion = '1.9.10-b6'

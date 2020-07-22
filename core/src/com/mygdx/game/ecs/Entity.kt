@@ -54,94 +54,83 @@ class Entity {
         WALK_LEFT, WALK_RIGHT, WALK_UP, WALK_DOWN, IDLE, IMMOBILE
     }
 
-    private var _json: Json? = null
-    var entityConfig: EntityConfig? = null
-    private var _components: Array<Component?>? = null
-    private var _inputComponent: InputComponent? = null
-    private var _graphicsComponent: GraphicsComponent? = null
-    private var _physicsComponent: PhysicsComponent? = null
+    private var json: Json = Json()
+    var entityConfig: EntityConfig = EntityConfig()
+    private var components: Array<Component> = Array(MAX_COMPONENTS)
+    private var inputComponent: InputComponent? = null
+    private var graphicsComponent: GraphicsComponent? = null
+    private var physicsComponent: PhysicsComponent? = null
 
     constructor(entity: Entity) {
         set(entity)
     }
 
     private fun set(entity: Entity): Entity {
-        _inputComponent = entity._inputComponent
-        _graphicsComponent = entity._graphicsComponent
-        _physicsComponent = entity._physicsComponent
-        if (_components == null) {
-            _components = Array(MAX_COMPONENTS)
-        }
-        _components!!.clear()
-        _components!!.add(_inputComponent)
-        _components!!.add(_physicsComponent)
-        _components!!.add(_graphicsComponent)
-        _json = entity._json
+        inputComponent = entity.inputComponent
+        graphicsComponent = entity.graphicsComponent
+        physicsComponent = entity.physicsComponent
+        components.clear()
+        components.add(inputComponent)
+        components.add(physicsComponent)
+        components.add(graphicsComponent)
+        json = entity.json
         entityConfig = EntityConfig(entity.entityConfig)
         return this
     }
 
     constructor(inputComponent: InputComponent?, physicsComponent: PhysicsComponent?, graphicsComponent: GraphicsComponent?) {
-        entityConfig = EntityConfig()
-        _json = Json()
-        _components = Array(MAX_COMPONENTS)
-        _inputComponent = inputComponent
-        _physicsComponent = physicsComponent
-        _graphicsComponent = graphicsComponent
-        _components!!.add(_inputComponent)
-        _components!!.add(_physicsComponent)
-        _components!!.add(_graphicsComponent)
+        this.inputComponent = inputComponent
+        this.physicsComponent = physicsComponent
+        this.graphicsComponent = graphicsComponent
+        components.add(this.inputComponent)
+        components.add(this.physicsComponent)
+        components.add(this.graphicsComponent)
     }
 
     fun sendMessage(messageType: MESSAGE, vararg args: String) {
         var fullMessage = messageType.toString()
-        for (string in args) {
-            fullMessage += Component.Companion.MESSAGE_TOKEN + string
-        }
-        for (component in _components!!) {
-            component!!.receiveMessage(fullMessage)
-        }
+        args.forEach { fullMessage += Component.MESSAGE_TOKEN + it }
+        components.forEach { it.receiveMessage(fullMessage) }
     }
 
     fun registerObserver(observer: ComponentObserver?) {
-        _inputComponent!!.addObserver(observer!!)
-        _physicsComponent!!.addObserver(observer)
-        _graphicsComponent!!.addObserver(observer)
+        inputComponent!!.addObserver(observer!!)
+        physicsComponent!!.addObserver(observer)
+        graphicsComponent!!.addObserver(observer)
     }
 
     fun unregisterObservers() {
-        _inputComponent!!.removeAllObservers()
-        _physicsComponent!!.removeAllObservers()
-        _graphicsComponent!!.removeAllObservers()
+        inputComponent!!.removeAllObservers()
+        physicsComponent!!.removeAllObservers()
+        graphicsComponent!!.removeAllObservers()
     }
 
     fun update(mapMgr: MapManager, batch: Batch, delta: Float) {
-        _inputComponent!!.update(this, delta)
-        _physicsComponent!!.update(this, mapMgr, delta)
-        _graphicsComponent!!.update(this, mapMgr, batch, delta)
+        inputComponent!!.update(this, delta)
+        physicsComponent!!.update(this, mapMgr, delta)
+        graphicsComponent!!.update(this, mapMgr, batch, delta)
     }
 
     fun updateInput(delta: Float) {
-        _inputComponent!!.update(this, delta)
+        inputComponent!!.update(this, delta)
     }
 
     fun dispose() {
-        for (component in _components!!) {
-            component!!.dispose()
-        }
+        components.forEach { it.dispose() }
+
     }
 
     val currentBoundingBox: Rectangle?
-        get() = _physicsComponent!!._boundingBox
+        get() = physicsComponent!!.boundingBox
 
     val currentPosition: Vector2?
-        get() = _graphicsComponent!!._currentPosition
+        get() = graphicsComponent!!.currentPosition
 
     val inputProcessor: InputProcessor?
-        get() = _inputComponent
+        get() = inputComponent
 
     fun getAnimation(type: AnimationType): Animation<TextureRegion>? {
-        return _graphicsComponent!!.getAnimation(type)
+        return graphicsComponent!!.getAnimation(type)
     }
 
     companion object {
@@ -168,23 +157,23 @@ class Entity {
 
         fun loadEntityConfigByPath(entityConfigPath: String?): EntityConfig {
             val entityConfig = getEntityConfig(entityConfigPath)
-            val serializedConfig = ProfileManager.instance.getProperty(entityConfig.entityID!!, EntityConfig::class.java)
+            val serializedConfig = ProfileManager.getProperty(entityConfig.entityID!!, EntityConfig::class.java)
             return serializedConfig ?: entityConfig
         }
 
         fun loadEntityConfig(entityConfig: EntityConfig): EntityConfig {
-            val serializedConfig = ProfileManager.instance.getProperty(entityConfig.entityID!!, EntityConfig::class.java)
+            val serializedConfig = ProfileManager.getProperty(entityConfig.entityID!!, EntityConfig::class.java)
             return serializedConfig ?: entityConfig
         }
 
-        fun initEntity(entityConfig: EntityConfig?, position: Vector2?): Entity? {
+        fun initEntity(entityConfig: EntityConfig, position: Vector2?): Entity? {
             val json = Json()
             val entity: Entity = EntityFactory.getEntity(EntityType.NPC)!!
             entity.entityConfig = entityConfig
             entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
             entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(position))
-            entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig?.state))
-            entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig?.direction))
+            entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig.state))
+            entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig.direction))
             return entity
         }
 
@@ -192,26 +181,27 @@ class Entity {
         fun initEntities(configs: Array<EntityConfig>): Hashtable<String?, Entity?> {
             val json = Json()
             val entities = Hashtable<String?, Entity?>()
-            for (config in configs) {
+            configs.forEach {
                 val entity: Entity = EntityFactory.getEntity(EntityType.NPC)!!
-                entity.entityConfig = config
+                entity.entityConfig = it
                 entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
                 entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(Vector2(0F, 0F)))
-                entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig?.state))
-                entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig?.direction))
-                entities[entity.entityConfig!!.entityID] = entity
+                entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig.state))
+                entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig.direction))
+                entities[entity.entityConfig.entityID] = entity
             }
+
             return entities
         }
 
-        fun initEntity(entityConfig: EntityConfig?): Entity? {
+        fun initEntity(entityConfig: EntityConfig): Entity? {
             val json = Json()
             val entity: Entity = EntityFactory.getEntity(EntityType.NPC)!!
             entity.entityConfig = entityConfig
             entity.sendMessage(MESSAGE.LOAD_ANIMATIONS, json.toJson(entity.entityConfig))
             entity.sendMessage(MESSAGE.INIT_START_POSITION, json.toJson(Vector2(0F, 0F)))
-            entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig?.state))
-            entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig?.direction))
+            entity.sendMessage(MESSAGE.INIT_STATE, json.toJson(entity.entityConfig.state))
+            entity.sendMessage(MESSAGE.INIT_DIRECTION, json.toJson(entity.entityConfig.direction))
             return entity
         }
     }

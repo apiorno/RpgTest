@@ -31,22 +31,10 @@ object ConversationGraphTest {
         _conversations!![yesAnswer.id] = yesAnswer
         _conversations!![unconnectedTest.id] = unconnectedTest
         _graph = ConversationGraph(_conversations, start.id)
-        val yesChoice = ConversationChoice()
-        yesChoice.sourceId = start.id
-        yesChoice.destinationId = yesAnswer.id
-        yesChoice.choicePhrase = "YES"
-        val noChoice = ConversationChoice()
-        noChoice.sourceId = start.id
-        noChoice.destinationId = noAnswer.id
-        noChoice.choicePhrase = "NO"
-        val startChoice01 = ConversationChoice()
-        startChoice01.sourceId = yesAnswer.id
-        startChoice01.destinationId = start.id
-        startChoice01.choicePhrase = "Go to beginning!"
-        val startChoice02 = ConversationChoice()
-        startChoice02.sourceId = noAnswer.id
-        startChoice02.destinationId = start.id
-        startChoice02.choicePhrase = "Go to beginning!"
+        val yesChoice = ConversationChoice(start.id!!, yesAnswer.id!!,"YES")
+        val noChoice = ConversationChoice(start.id!!,noAnswer.id!!,"NO")
+        val startChoice01 = ConversationChoice(yesAnswer.id!!,start.id!!,"Go to beginning!")
+        val startChoice02 = ConversationChoice(noAnswer.id!!,start.id!!,"Go to beginning!")
         _graph!!.addChoice(yesChoice)
         _graph!!.addChoice(noChoice)
         _graph!!.addChoice(startChoice01)
@@ -70,12 +58,10 @@ object ConversationGraphTest {
                 //System.out.println(choice.getDestinationId() + " " + choice.getChoicePhrase());
             }
             _input = System.console().readLine()
-            var choice: Conversation? = null
-            choice = try {
+            return try {
                 _graph!!.getConversationByID(_input)
             } catch (nfe: NumberFormatException) {
                 return null
             }
-            return choice
         }
 }

@@ -7,15 +7,17 @@ import com.mygdx.game.ecs.Component.MESSAGE
 import com.mygdx.game.screens.MainGameScreen
 
 class PlayerInputComponent : InputComponent() {
-    private val _lastMouseCoordinates: Vector3
+
+    private val lastMouseCoordinates: Vector3 = Vector3()
+
     override fun receiveMessage(message: String) {
-        val string: Array<String> = message.split(Component.Companion.MESSAGE_TOKEN).toTypedArray()
-        if (string.size == 0) return
+        val string: Array<String> = message.split(Component.MESSAGE_TOKEN).toTypedArray()
+        if (string.isEmpty()) return
 
         //Specifically for messages with 1 object payload
         if (string.size == 2) {
             if (string[0].equals(MESSAGE.CURRENT_DIRECTION.toString(), ignoreCase = true)) {
-                _currentDirection = _json.fromJson(Entity.Direction::class.java, string[1])
+                currentDirection = json.fromJson(Entity.Direction::class.java, string[1])
             }
         }
     }
@@ -26,35 +28,35 @@ class PlayerInputComponent : InputComponent() {
 
     override fun update(entity: Entity, delta: Float) {
         //Keyboard input
-        if (InputComponent.Companion.keys.get(Keys.PAUSE)!!) {
+        if (keys[Keys.PAUSE]!!) {
             MainGameScreen.setGameState(MainGameScreen.GameState.PAUSED)
             pauseReleased()
-        } else if (InputComponent.Companion.keys.get(Keys.LEFT)!!) {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.LEFT))
-        } else if (InputComponent.Companion.keys.get(Keys.RIGHT)!!) {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.RIGHT))
-        } else if (InputComponent.Companion.keys.get(Keys.UP)!!) {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.UP))
-        } else if (InputComponent.Companion.keys.get(Keys.DOWN)!!) {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.WALKING))
-            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.DOWN))
-        } else if (InputComponent.Companion.keys.get(Keys.QUIT)!!) {
+        } else if (keys[Keys.LEFT]!!) {
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.LEFT))
+        } else if (keys[Keys.RIGHT]!!) {
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.RIGHT))
+        } else if (keys[Keys.UP]!!) {
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.UP))
+        } else if (keys[Keys.DOWN]!!) {
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.WALKING))
+            entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.DOWN))
+        } else if (keys[Keys.QUIT]!!) {
             quitReleased()
             Gdx.app.exit()
         } else {
-            entity.sendMessage(MESSAGE.CURRENT_STATE, _json.toJson(Entity.State.IDLE))
-            if (_currentDirection == null) {
-                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, _json.toJson(Entity.Direction.DOWN))
+            entity.sendMessage(MESSAGE.CURRENT_STATE, json.toJson(Entity.State.IDLE))
+            if (currentDirection == null) {
+                entity.sendMessage(MESSAGE.CURRENT_DIRECTION, json.toJson(Entity.Direction.DOWN))
             }
         }
 
         //Mouse input
         if (mouseButtons[Mouse.SELECT]!!) {
             //Gdx.app.debug(TAG, "Mouse LEFT click at : (" + _lastMouseCoordinates.x + "," + _lastMouseCoordinates.y + ")" );
-            entity.sendMessage(MESSAGE.INIT_SELECT_ENTITY, _json.toJson(_lastMouseCoordinates))
+            entity.sendMessage(MESSAGE.INIT_SELECT_ENTITY, json.toJson(lastMouseCoordinates))
             mouseButtons[Mouse.SELECT] = false
         }
     }
@@ -147,73 +149,73 @@ class PlayerInputComponent : InputComponent() {
     }
 
     //Key presses
-    fun leftPressed() {
-        InputComponent.Companion.keys.put(Keys.LEFT, true)
+    private fun leftPressed() {
+        keys[Keys.LEFT] = true
     }
 
-    fun rightPressed() {
-        InputComponent.Companion.keys.put(Keys.RIGHT, true)
+    private fun rightPressed() {
+        keys[Keys.RIGHT] = true
     }
 
-    fun upPressed() {
-        InputComponent.Companion.keys.put(Keys.UP, true)
+    private fun upPressed() {
+        keys[Keys.UP] = true
     }
 
-    fun downPressed() {
-        InputComponent.Companion.keys.put(Keys.DOWN, true)
+    private fun downPressed() {
+        keys[Keys.DOWN] = true
     }
 
-    fun quitPressed() {
-        InputComponent.Companion.keys.put(Keys.QUIT, true)
+    private fun quitPressed() {
+        keys[Keys.QUIT] = true
     }
 
-    fun pausePressed() {
-        InputComponent.Companion.keys.put(Keys.PAUSE, true)
+    private fun pausePressed() {
+        keys[Keys.PAUSE] = true
     }
 
-    fun setClickedMouseCoordinates(x: Int, y: Int) {
-        _lastMouseCoordinates[x.toFloat(), y.toFloat()] = 0f
+    private fun setClickedMouseCoordinates(x: Int, y: Int) {
+        lastMouseCoordinates[x.toFloat(), y.toFloat()] = 0f
     }
 
-    fun selectMouseButtonPressed(x: Int, y: Int) {
-        mouseButtons.put(Mouse.SELECT, true)
+    private fun selectMouseButtonPressed(x: Int, y: Int) {
+        mouseButtons[Mouse.SELECT] = true
     }
 
-    fun doActionMouseButtonPressed(x: Int, y: Int) {
-        mouseButtons.put(Mouse.DOACTION, true)
+    private fun doActionMouseButtonPressed(x: Int, y: Int) {
+        mouseButtons[Mouse.DOACTION] = true
     }
 
     //Releases
-    fun leftReleased() {
-        keys.put(Keys.LEFT, false)
+    private fun leftReleased() {
+        keys[Keys.LEFT] = false
     }
 
-    fun rightReleased() {
-        keys.put(Keys.RIGHT, false)
+    private fun rightReleased() {
+        keys[Keys.RIGHT] = false
     }
 
-    fun upReleased() {
-        keys.put(Keys.UP, false)
+    private fun upReleased() {
+        keys[Keys.UP] = false
     }
 
-    fun downReleased() {
-        keys.put(Keys.DOWN, false)
+    private fun downReleased() {
+        keys[Keys.DOWN] = false
     }
 
-    fun quitReleased() {
-        keys.put(Keys.QUIT, false)
+    private fun quitReleased() {
+        keys[Keys.QUIT] = false
     }
 
-    fun pauseReleased() {
-        keys.put(Keys.PAUSE, false)
+    private fun pauseReleased() {
+        keys[Keys.PAUSE] = false
     }
 
-    fun selectMouseButtonReleased(x: Int, y: Int) {
-        mouseButtons.put(Mouse.SELECT, false)
+    private fun selectMouseButtonReleased(x: Int, y: Int) {
+        mouseButtons[Mouse.SELECT] = false
     }
 
-    fun doActionMouseButtonReleased(x: Int, y: Int) {
-        mouseButtons.put(Mouse.DOACTION, false)
+    private fun doActionMouseButtonReleased(x: Int, y: Int) {
+        mouseButtons[Mouse.DOACTION] = false
     }
 
     companion object {
@@ -227,7 +229,4 @@ class PlayerInputComponent : InputComponent() {
         }
     }
 
-    init {
-        _lastMouseCoordinates = Vector3()
-    }
 }

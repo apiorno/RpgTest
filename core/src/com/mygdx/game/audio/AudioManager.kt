@@ -12,26 +12,29 @@ import com.mygdx.game.audio.AudioObserver.AudioCommand
 import com.mygdx.game.audio.AudioObserver.AudioTypeEvent
 import java.util.*
 
-class AudioManager private constructor() : AudioObserver {
-    private val _queuedMusic: Hashtable<String?, Music?> = Hashtable()
-    private val _queuedSounds: Hashtable<String?, Sound?> = Hashtable()
-    override fun onNotify(command: AudioCommand?, event: AudioTypeEvent) {
+object AudioManager : AudioObserver {
+    private val TAG = AudioManager::class.java.simpleName
+    private val queuedMusic: Hashtable<String, Music> = Hashtable()
+    private val queuedSounds: Hashtable<String, Sound> = Hashtable()
+
+    override fun onNotify(command: AudioCommand, event: AudioTypeEvent) {
+
         when (command) {
             AudioCommand.MUSIC_LOAD -> loadMusicAsset(event.value)
             AudioCommand.MUSIC_PLAY_ONCE -> playMusic(false, event.value)
             AudioCommand.MUSIC_PLAY_LOOP -> playMusic(true, event.value)
             AudioCommand.MUSIC_STOP -> {
-                val music = _queuedMusic[event.value]
+                val music = queuedMusic[event.value]
                 music?.stop()
             }
-            AudioCommand.MUSIC_STOP_ALL -> for (musicStop in _queuedMusic.values) {
+            AudioCommand.MUSIC_STOP_ALL -> for (musicStop in queuedMusic.values) {
                 musicStop!!.stop()
             }
             AudioCommand.SOUND_LOAD -> loadSoundAsset(event.value)
             AudioCommand.SOUND_PLAY_LOOP -> playSound(true, event.value)
             AudioCommand.SOUND_PLAY_ONCE -> playSound(false, event.value)
             AudioCommand.SOUND_STOP -> {
-                val sound = _queuedSounds[event.value]
+                val sound = queuedSounds[event.value]
                 sound?.stop()
             }
             else -> {
@@ -40,7 +43,7 @@ class AudioManager private constructor() : AudioObserver {
     }
 
     private fun playMusic(isLooping: Boolean, fullFilePath: String?): Music? {
-        var music = _queuedMusic[fullFilePath]
+        var music = queuedMusic[fullFilePath]
         if (music != null) {
             music.isLooping = isLooping
             music.play()
@@ -48,7 +51,7 @@ class AudioManager private constructor() : AudioObserver {
             music = getMusicAsset(fullFilePath!!)
             music!!.isLooping = isLooping
             music.play()
-            _queuedMusic[fullFilePath] = music
+            queuedMusic[fullFilePath] = music
         } else {
             Gdx.app.debug(TAG, "Music not loaded")
             return null
@@ -57,7 +60,7 @@ class AudioManager private constructor() : AudioObserver {
     }
 
     private fun playSound(isLooping: Boolean, fullFilePath: String?): Sound? {
-        var sound = _queuedSounds[fullFilePath]
+        var sound = queuedSounds[fullFilePath]
         if (sound != null) {
             val soundId = sound.play()
             sound.setLooping(soundId, isLooping)
@@ -65,7 +68,7 @@ class AudioManager private constructor() : AudioObserver {
             sound = getSoundAsset(fullFilePath!!)
             val soundId = sound!!.play()
             sound.setLooping(soundId, isLooping)
-            _queuedSounds[fullFilePath] = sound
+            queuedSounds[fullFilePath] = sound
         } else {
             Gdx.app.debug(TAG, "Sound not loaded")
             return null
@@ -74,25 +77,7 @@ class AudioManager private constructor() : AudioObserver {
     }
 
     fun dispose() {
-        for (music in _queuedMusic.values) {
-            music!!.dispose()
-        }
-        for (sound in _queuedSounds.values) {
-            sound!!.dispose()
-        }
+        queuedMusic.values.forEach { it.dispose() }
+        queuedSounds.values.forEach { it.dispose() }
     }
-
-    companion object {
-        private val TAG = AudioManager::class.java.simpleName
-        private var _instance: AudioManager? = null
-        @JvmStatic
-        val instance: AudioManager
-            get() {
-                if (_instance == null) {
-                    _instance = AudioManager()
-                }
-                return _instance!!
-            }
-    }
-
 }
